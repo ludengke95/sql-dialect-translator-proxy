@@ -1,0 +1,19 @@
+server:
+  port: 8083
+  tomcat:
+    threads:
+      max: 8
+      min-spare: 2
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 连接到本地 SDT Proxy 7788 端口，数据库名为 mydb (映射到 Postgres 中的 public 模式)
+    url: jdbc:mysql://localhost:7788/mydb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: proxy_password
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000

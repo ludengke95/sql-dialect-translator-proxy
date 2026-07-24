@@ -1,0 +1,32 @@
+# MySQL Proxy 默认配置
+proxy:
+#  frontend-protocol: POSTGRESQL
+  port: 7788
+  auth:
+    user: root
+    password: proxy_password
+backends:
+  - name: tpch
+    dialect: POSTGRESQL
+    jdbc-url: jdbc:postgresql://127.0.0.1:5432/mydb?currentSchema=tpch
+    username: sdtpu
+    password: pg_password
+    max-pool-size: 10
+    min-idle: 2
+#  - name: tpcc
+#    dialect: POSTGRESQL
+#    jdbc-url: jdbc:postgresql://127.0.0.1:5432/mydb?currentSchema=tpcc
+#    username: sdtpu
+#    password: pg_password
+#    max-pool-size: 10
+#    min-idle: 2
+#  - name: meta_data
+#    dialect: POSTGRESQL
+#    jdbc-url: jdbc:postgresql://10.110.60.187:5866/highgo?useUnicode=true&characterEncoding=utf8&currentSchema=meta_data_center
+#    username: highgo
+#    password: Highgo@12345
+#    max-pool-size: 10
+#    min-idle: 2
+translation:
+  keyword-case: UPPER
+  identifier-case: LOWER

@@ -1,0 +1,9 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir psycopg2-binary
+
+COPY run_sql_pg.py /app/run_sql_pg.py
+
+ENTRYPOINT ["python", "/app/run_sql_pg.py"]

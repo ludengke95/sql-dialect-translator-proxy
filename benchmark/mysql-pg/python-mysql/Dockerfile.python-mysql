@@ -1,0 +1,14 @@
+# Python 3.10 + mysql-connector-python 集成测试镜像
+# 用于通过 Docker 容器执行基于 Python mysql.connector 的 SDTP 集成测试
+FROM python:3.10-slim
+
+LABEL description="Python MySQL Connector 集成测试镜像"
+
+RUN pip install --no-cache-dir mysql-connector-python
+
+# 多语句 SQL 执行器脚本
+COPY run_sql.py /app/run_sql.py
+
+WORKDIR /app
+
+ENTRYPOINT ["python", "/app/run_sql.py"]

@@ -1,0 +1,311 @@
+# =============================================================================
+# SDTP 全方言全客户端集成测试 (TPC-C / TPC-H)
+#
+# 包含两类测试:
+#   1. 前端 MySQL  - 后端 PostgreSQL
+#      - mysql-client-5 (mysql:5.7 原生客户端)
+#      - mysql-client-8 (mysql:8.0 原生客户端)
+#      - mysql-jdbc-5   (sqlline + MySQL 5.1.49 JDBC)
+#      - mysql-jdbc-8   (sqlline + MySQL 8.0.28 JDBC)
+#      - python-mysql   (mysql-connector-python)
+#
+#   2. 前端 PG     - 后端 MySQL
+#      - pg-client      (psql 原生客户端)
+#      - pg-jdbc        (sqlline + PostgreSQL 42.6.0 JDBC)
+#      - python-pg      (psycopg2)
+# =============================================================================
+
+name: SDTP Integration Test
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: ['main']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ============================================================================
+# Job 1: 统一构建 — Maven + Docker 镜像包
+# ============================================================================
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+
+      # --- SDTP 代理主程序构建 ---
+      - name: Build SDTP with Maven
+        run: mvn clean package -DskipTests -B
+
+      - name: Build SDTP Docker image
+        run: docker build -f docker/Dockerfile -t sdtp:latest .
+
+      - name: Save SDTP Docker image
+        run: docker save sdtp:latest | gzip > /tmp/sdtp-image.tar.gz
+
+      - name: Upload SDTP Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdtp-docker-image
+          path: /tmp/sdtp-image.tar.gz
+          retention-days: 1
+
+      # --- sqlline MySQL 5 构建 ---
+      - name: Build mysql5-sqlline Docker image
+        run: |
+          docker build -t mysql5-sqlline:latest \
+            -f benchmark/mysql-pg/sqlline/Dockerfile.mysql5-sqlline \
+            benchmark/mysql-pg/sqlline/
+
+      - name: Save mysql5-sqlline Docker image
+        run: docker save mysql5-sqlline:latest | gzip > /tmp/mysql5-sqlline.tar.gz
+
+      - name: Upload mysql5-sqlline Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql5-sqlline-docker-image
+          path: /tmp/mysql5-sqlline.tar.gz
+          retention-days: 1
+
+      # --- sqlline MySQL 8 构建 ---
+      - name: Build mysql8-sqlline Docker image
+        run: |
+          docker build -t mysql8-sqlline:latest \
+            -f benchmark/mysql-pg/sqlline/Dockerfile.mysql8-sqlline \
+            benchmark/mysql-pg/sqlline/
+
+      - name: Save mysql8-sqlline Docker image
+        run: docker save mysql8-sqlline:latest | gzip > /tmp/mysql8-sqlline.tar.gz
+
+      - name: Upload mysql8-sqlline Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql8-sqlline-docker-image
+          path: /tmp/mysql8-sqlline.tar.gz
+          retention-days: 1
+
+      # --- python-mysql 构建 ---
+      - name: Build python-mysql Docker image
+        run: |
+          docker build -t python-mysql:latest \
+            -f benchmark/mysql-pg/python-mysql/Dockerfile.python-mysql \
+            benchmark/mysql-pg/python-mysql/
+
+      - name: Save python-mysql Docker image
+        run: docker save python-mysql:latest | gzip > /tmp/python-mysql.tar.gz
+
+      - name: Upload python-mysql Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-mysql-docker-image
+          path: /tmp/python-mysql.tar.gz
+          retention-days: 1
+
+      # --- sqlline PG 构建 ---
+      - name: Build pg-sqlline Docker image
+        run: |
+          docker build -t pg-sqlline:latest \
+            -f benchmark/pg-mysql/sqlline/Dockerfile.pg-sqlline \
+            benchmark/pg-mysql/sqlline/
+
+      - name: Save pg-sqlline Docker image
+        run: docker save pg-sqlline:latest | gzip > /tmp/pg-sqlline.tar.gz
+
+      - name: Upload pg-sqlline Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-sqlline-docker-image
+          path: /tmp/pg-sqlline.tar.gz
+          retention-days: 1
+
+      # --- python-pg 构建 ---
+      - name: Build python-pg Docker image
+        run: |
+          docker build -t python-pg:latest \
+            -f benchmark/pg-mysql/python-pg/Dockerfile.python-pg \
+            benchmark/pg-mysql/python-pg/
+
+      - name: Save python-pg Docker image
+        run: docker save python-pg:latest | gzip > /tmp/python-pg.tar.gz
+
+      - name: Upload python-pg Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-pg-docker-image
+          path: /tmp/python-pg.tar.gz
+          retention-days: 1
+
+  # ==========================================================================
+  # 类别一：前端 MySQL -> 后端 PostgreSQL (mysql-pg)
+  # ==========================================================================
+  mysql-client-5:
+    needs: [build]
+    uses: ./.github/workflows/integration-test-job.yml
+    with:
+      test_mode: mysql-client-5
+      frontend_protocol: MYSQL
+      backend_type: postgres
+      backend_dialect: POSTGRESQL
+      backend_user: sdtpu
+      backend_password: pg_password
+      backend_db: mydb
+      backend_port: '5432'
+      sdtp_user: root
+      sdtp_password: proxy_password
+      sdtp_port: '7788'
+      report_name: mysql-client-5-reports
+      summary_title: "MySQL Client 5 (FE: MySQL -> BE: PG) 测试结果"
+
+  mysql-client-8:
+    needs: [build]
+    uses: ./.github/workflows/integration-test-job.yml
+    with:
+      test_mode: mysql-client-8
+      frontend_protocol: MYSQL
+      backend_type: postgres
+      backend_dialect: POSTGRESQL
+      backend_user: sdtpu
+      backend_password: pg_password
+      backend_db: mydb
+      backend_port: '5432'
+      sdtp_user: root
+      sdtp_password: proxy_password
+      sdtp_port: '7788'
+      report_name: mysql-client-8-reports
+      summary_title: "MySQL Client 8 (FE: MySQL -> BE: PG) 测试结果"
+
+  mysql-jdbc-5:
+    needs: [build]
+    uses: ./.github/workflows/integration-test-job.yml
+    with:
+      test_mode: mysql-jdbc-5
+      frontend_protocol: MYSQL
+      backend_type: postgres
+      backend_dialect: POSTGRESQL
+      backend_user: sdtpu
+      backend_password: pg_password
+      backend_db: mydb
+      backend_port: '5432'
+      sdtp_user: root
+      sdtp_password: proxy_password
+      sdtp_port: '7788'
+      extra_docker_image_artifact: mysql5-sqlline-docker-image
+      extra_docker_image_file: mysql5-sqlline.tar.gz
+      report_name: mysql-jdbc-5-reports
+      summary_title: "MySQL JDBC 5 (sqlline) (FE: MySQL -> BE: PG) 测试结果"
+
+  mysql-jdbc-8:
+    needs: [build]
+    uses: ./.github/workflows/integration-test-job.yml
+    with:
+      test_mode: mysql-jdbc-8
+      frontend_protocol: MYSQL
+      backend_type: postgres
+      backend_dialect: POSTGRESQL
+      backend_user: sdtpu
+      backend_password: pg_password
+      backend_db: mydb
+      backend_port: '5432'
+      sdtp_user: root
+      sdtp_password: proxy_password
+      sdtp_port: '7788'
+      extra_docker_image_artifact: mysql8-sqlline-docker-image
+      extra_docker_image_file: mysql8-sqlline.tar.gz
+      report_name: mysql-jdbc-8-reports
+      summary_title: "MySQL JDBC 8 (sqlline) (FE: MySQL -> BE: PG) 测试结果"
+
+  python-mysql:
+    needs: [build]
+    uses: ./.github/workflows/integration-test-job.yml
+    with:
+      test_mode: python-mysql
+      frontend_protocol: MYSQL
+      backend_type: postgres
+      backend_dialect: POSTGRESQL
+      backend_user: sdtpu
+      backend_password: pg_password
+      backend_db: mydb
+      backend_port: '5432'
+      sdtp_user: root
+      sdtp_password: proxy_password
+      sdtp_port: '7788'
+      extra_docker_image_artifact: python-mysql-docker-image
+      extra_docker_image_file: python-mysql.tar.gz
+      report_name: python-mysql-reports
+      summary_title: "Python mysql.connector (FE: MySQL -> BE: PG) 测试结果"
+
+  # ==========================================================================
+  # 类别二：前端 PostgreSQL -> 后端 MySQL (pg-mysql)
+  # ==========================================================================
+  pg-client:
+    needs: [build]
+    uses: ./.github/workflows/integration-test-job.yml
+    with:
+      test_mode: pg-client
+      frontend_protocol: POSTGRESQL
+      backend_type: mysql
+      backend_dialect: MYSQL
+      backend_user: root
+      backend_password: test_password
+      backend_db: testdb
+      backend_port: '3306'
+      sdtp_user: root
+      sdtp_password: test_password
+      sdtp_port: '5432'
+      report_name: pg-client-reports
+      summary_title: "PG Client (FE: PG -> BE: MySQL) 测试结果"
+
+  pg-jdbc:
+    needs: [build]
+    uses: ./.github/workflows/integration-test-job.yml
+    with:
+      test_mode: pg-jdbc
+      frontend_protocol: POSTGRESQL
+      backend_type: mysql
+      backend_dialect: MYSQL
+      backend_user: root
+      backend_password: test_password
+      backend_db: testdb
+      backend_port: '3306'
+      sdtp_user: root
+      sdtp_password: test_password
+      sdtp_port: '5432'
+      extra_docker_image_artifact: pg-sqlline-docker-image
+      extra_docker_image_file: pg-sqlline.tar.gz
+      report_name: pg-jdbc-reports
+      summary_title: "PG JDBC (sqlline) (FE: PG -> BE: MySQL) 测试结果"
+
+  python-pg:
+    needs: [build]
+    uses: ./.github/workflows/integration-test-job.yml
+    with:
+      test_mode: python-pg
+      frontend_protocol: POSTGRESQL
+      backend_type: mysql
+      backend_dialect: MYSQL
+      backend_user: root
+      backend_password: test_password
+      backend_db: testdb
+      backend_port: '3306'
+      sdtp_user: root
+      sdtp_password: test_password
+      sdtp_port: '5432'
+      extra_docker_image_artifact: python-pg-docker-image
+      extra_docker_image_file: python-pg.tar.gz
+      report_name: python-pg-reports
+      summary_title: "Python psycopg2 (FE: PG -> BE: MySQL) 测试结果"

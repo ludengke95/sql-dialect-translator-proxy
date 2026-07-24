@@ -1,0 +1,273 @@
+version: '3.8'
+
+services:
+  # ==================== Init Container: JDBC Drivers ====================
+  init-drivers:
+    image: alpine:3.18
+    container_name: proxy-init-drivers
+    volumes:
+      - sdtp_jdbc:/drivers
+    command: >
+      sh -c "
+      set -e;
+      mkdir -p /drivers;
+      
+      if [ ! -f /drivers/postgresql-42.7.2.jar ]; then
+        echo 'Downloading PostgreSQL JDBC Driver...';
+        wget -q -O /drivers/postgresql-42.7.2.jar https://maven.aliyun.com/repository/public/org/postgresql/postgresql/42.7.2/postgresql-42.7.2.jar;
+      else
+        echo 'PostgreSQL JDBC Driver already exists.';
+      fi;
+
+      if [ ! -f /drivers/mysql-connector-java-8.0.33.jar ]; then
+        echo 'Downloading MySQL JDBC Driver...';
+        wget -q -O /drivers/mysql-connector-java-8.0.33.jar https://maven.aliyun.com/repository/public/mysql/mysql-connector-java/8.0.33/mysql-connector-java-8.0.33.jar;
+      else
+        echo 'MySQL JDBC Driver already exists.';
+      fi;
+
+      if [ ! -f /drivers/ojdbc8-19.3.0.0.jar ]; then
+        echo 'Downloading Oracle JDBC Driver...';
+        wget -q -O /drivers/ojdbc8-19.3.0.0.jar https://maven.aliyun.com/repository/public/com/oracle/database/jdbc/ojdbc8/19.3.0.0/ojdbc8-19.3.0.0.jar;
+      else
+        echo 'Oracle JDBC Driver already exists.';
+      fi;
+
+      if [ ! -f /drivers/mssql-jdbc-9.4.1.jre8.jar ]; then
+        echo 'Downloading SQL Server JDBC Driver...';
+        wget -q -O /drivers/mssql-jdbc-9.4.1.jre8.jar https://maven.aliyun.com/repository/public/com/microsoft/sqlserver/mssql-jdbc/9.4.1.jre8/mssql-jdbc-9.4.1.jre8.jar;
+      else
+        echo 'SQL Server JDBC Driver already exists.';
+      fi;
+
+      if [ ! -f /drivers/DmJdbcDriver18-8.1.1.49.jar ]; then
+        echo 'Downloading Dameng JDBC Driver...';
+        wget -q -O /drivers/DmJdbcDriver18-8.1.1.49.jar https://maven.aliyun.com/repository/public/com/dameng/DmJdbcDriver18/8.1.1.49/DmJdbcDriver18-8.1.1.49.jar;
+      else
+        echo 'Dameng JDBC Driver already exists.';
+      fi;
+
+      echo 'All JDBC drivers are ready:';
+      ls -lh /drivers;
+      "
+
+  # ==================== PostgreSQL 目标库 ====================
+  postgres:
+    image: postgres:15-alpine
+    container_name: proxy-target-pg
+    environment:
+      POSTGRES_USER: sdtpu
+      POSTGRES_PASSWORD: pg_password
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sdtpu -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==================== MySQL 目标库 ====================
+  mysql:
+    image: mysql:8.0
+    container_name: proxy-target-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql_root_password
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: sdtpu
+      MYSQL_PASSWORD: mysql_password
+    ports:
+      - "33066:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "sdtpu", "-pmysql_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Oracle 目标库 ====================
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    container_name: proxy-target-oracle
+    environment:
+      ORACLE_PASSWORD: oracle_password
+      APP_USER: sdtpu
+      APP_PASSWORD: oracle_password
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/sbin/healthcheck.sh"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  # ==================== SQL Server 目标库 ====================
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: proxy-target-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: Sqlserver_password123
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Sqlserver_password123", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== IvorySQL 目标库 ====================
+  ivorysql:
+    image: ivorysql/ivorysql:3.1
+    container_name: proxy-target-ivorysql
+    environment:
+      POSTGRES_USER: sdtpu
+      POSTGRES_PASSWORD: pg_password
+      POSTGRES_DB: mydb
+    ports:
+      - "5435:5432"
+    volumes:
+      - ivorysql_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sdtpu -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Oracle/达梦 目标库 ====================
+  dm8:
+    image: xuxuclassmate/dameng-dm8:latest
+    container_name: proxy-target-dm8
+    environment:
+      PAGE_SIZE: 16
+      CASE_SENSITIVE: 0
+    ports:
+      - "5236:5236"
+    volumes:
+      - dm8_data:/opt/dmdbms/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/5236'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ==================== Apache Doris 目标库 ====================
+  doris:
+    image: selectdb/doris-all-in-one:2.0.0
+    container_name: proxy-target-doris
+    ports:
+      - "9030:9030"
+      - "8030:8030"
+    volumes:
+      - doris_data:/opt/apache-doris/fe/doris-meta
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/9030'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ==================== SDT Proxy 实例 ====================
+  sdtp:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: sdtp-proxy
+    ports:
+      - "7788:7788"
+      - "17788:17788"
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC"
+      PROXY_CONFIG: /opt/sdtp/config/proxy-config-docker.yml
+    volumes:
+      - ../sdtp-server/src/main/resources/proxy-config-docker.yml:/opt/sdtp/config/proxy-config-docker.yml
+      - sdtp_logs:/opt/sdtp/logs
+      - sdtp_jdbc:/opt/sdtp/jdbc
+    depends_on:
+      init-drivers:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      oracle:
+        condition: service_healthy
+      sqlserver:
+        condition: service_healthy
+      ivorysql:
+        condition: service_healthy
+      dm8:
+        condition: service_healthy
+      doris:
+        condition: service_healthy
+
+  # ==================== Prometheus 指标抓取 ====================
+  prometheus:
+    image: prom/prometheus:v2.45.6
+    container_name: proxy-monitor-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    depends_on:
+      - sdtp
+
+  # ==================== Loki 日志存储 ====================
+  loki:
+    image: grafana/loki:2.9.1
+    container_name: proxy-monitor-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../monitoring/loki:/etc/loki
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+
+  # ==================== Promtail 日志收集 ====================
+  promtail:
+    image: grafana/promtail:2.9.1
+    container_name: proxy-monitor-promtail
+    volumes:
+      - ../monitoring/promtail:/etc/promtail
+      - sdtp_logs:/var/log/sdtp:ro
+    command: -config.file=/etc/promtail/promtail-config.yml
+    depends_on:
+      - loki
+
+  # ==================== Grafana 展示看板 ====================
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: proxy-monitor-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+
+volumes:
+  pg_data:
+  mysql_data:
+  oracle_data:
+  sqlserver_data:
+  ivorysql_data:
+  dm8_data:
+  doris_data:
+  sdtp_logs:
+  sdtp_jdbc:
+  prometheus_data:
+  loki_data:
+  grafana_data:

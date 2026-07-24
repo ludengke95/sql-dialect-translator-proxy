@@ -1,0 +1,59 @@
+sequenceDiagram
+    participant Client as 客户端
+    participant Bootstrap as ProxyBootstrap
+    participant Registry as ProtocolRegistry
+    participant Protocol as FrontendProtocol
+    participant Pipeline as Netty Pipeline
+    participant Decoder as ProtocolDecoder
+    participant CmdHandler as CommandHandler
+    participant SysCatalog as SystemCatalogProvider
+    participant RespWriter as ResponseWriter
+    participant TransQP as TranslationQueryProcessor
+    participant Backend as JdbcBackendQP
+    participant DB as 目标数据库
+
+    Note over Bootstrap: === 启动阶段：SPI 协议发现 ===
+    Bootstrap->>Registry: ServiceLoader.load(FrontendProtocol)
+    Registry-->>Bootstrap: Map{"MYSQL": MySQLFP, "POSTGRESQL": PgFP}
+    Bootstrap->>Registry: getProtocol(config.frontendProtocol)
+    Registry-->>Bootstrap: MySQLFrontendProtocol instance
+
+    Note over Client, Pipeline: === 新连接：协议感知 Pipeline 构建 ===
+    Client->>Bootstrap: TCP 连接建立
+    Bootstrap->>Protocol: newDecoder(maxPacketSize)
+    Protocol-->>Bootstrap: MySQLPacketDecoder
+    Bootstrap->>Protocol: newEncoder()
+    Protocol-->>Bootstrap: MySQLPacketEncoder
+    Bootstrap->>Protocol: newHandshakeHandler(authConfig, bizGroup)
+    Protocol-->>Bootstrap: HandshakeHandler
+    
+    Bootstrap->>Pipeline: addLast(decoder, encoder, handshakeHandler)
+    Pipeline->>Pipeline: channelActive → 发送握手包
+
+    Note over Client, Pipeline: === 认证流程 ===
+    Client->>Decoder: HandshakeResponse41
+    Decoder->>Pipeline: RawMySQLPacket
+    Pipeline->>Pipeline: AuthHandler 验证 → Pipeline 切换为 CommandHandler
+
+    Note over Client, DB: === SQL 查询处理 ===
+    Client->>Decoder: COM_QUERY: SELECT * FROM users
+    Decoder->>CmdHandler: RawMySQLPacket (seq=0)
+
+    alt SET / USE / 系统变量查询
+        CmdHandler->>SysCatalog: canHandle(sql)
+        SysCatalog-->>CmdHandler: true
+        CmdHandler->>SysCatalog: handleQuery(ctx, sql, session)
+        SysCatalog-->>CmdHandler: 写入结果集（内部使用 InterceptResult）
+        CmdHandler->>RespWriter: writeColumnDef / writeTextRow / writeEof
+        RespWriter->>Client: 协议标准的结果集包序列
+    else 普通 SQL 查询
+        CmdHandler->>TransQP: process(ctx, sql, session)
+        TransQP->>Protocol: getSourceDialect()
+        Protocol-->>TransQP: "MYSQL"
+        TransQP->>TransQP: Calcite: MySQL → PostgreSQL
+        TransQP->>Backend: delegate.process(ctx, translatedSql, session)
+        Backend->>DB: JDBC executeQuery(translatedSql)
+        DB-->>Backend: ResultSet
+        Backend->>RespWriter: writeResultSet(ctx, rs, seqGen)
+        RespWriter->>Client: 列数包 → 列定义×N → EOF → 行数据×N → EOF
+    end
