@@ -1,0 +1,22 @@
+# 基础镜像：Java 8 轻量运行时，兼容 PostgreSQL JDBC
+FROM eclipse-temurin:8-jre-alpine
+
+LABEL description="SQLLine + PostgreSQL JDBC Driver 客户端"
+
+RUN apk add --no-cache curl && \
+    mkdir -p /opt/sqlline && \
+    # 下载 SQLLine 命令行 SQL 工具（带全部依赖）
+    curl -fSL https://repo1.maven.org/maven2/sqlline/sqlline/1.12.0/sqlline-1.12.0-jar-with-dependencies.jar \
+         -o /opt/sqlline/sqlline.jar && \
+    # 下载 PostgreSQL 官方 JDBC 42.6.0
+    curl -fSL https://repo1.maven.org/maven2/org/postgresql/postgresql/42.6.0/postgresql-42.6.0.jar \
+         -o /opt/sqlline/postgresql-connector.jar && \
+    # 清理依赖，减小镜像体积
+    apk del curl && \
+    rm -rf /var/cache/apk/*
+
+# SQL 脚本默认挂载目录
+WORKDIR /sql
+
+# 入口：默认加载 PostgreSQL 驱动 org.postgresql.Driver
+ENTRYPOINT [ "java", "-cp", "/opt/sqlline/*", "sqlline.SqlLine", "-d", "org.postgresql.Driver" ]

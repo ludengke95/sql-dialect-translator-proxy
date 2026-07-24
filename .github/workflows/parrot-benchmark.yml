@@ -1,0 +1,146 @@
+# =============================================================================
+# SDT — PARROT (NeurIPS 2025) SQL 方言翻译自动化评测工作流
+# =============================================================================
+
+name: PARROT Benchmark Suite
+
+on:
+  workflow_dispatch:
+    inputs:
+      dataset_url:
+        description: 'PARROT Dataset JSON URL'
+        required: false
+        default: 'https://huggingface.co/datasets/weizhoudb/PARROT/resolve/main/parrot_diverse.json'
+        type: string
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  parrot-benchmark:
+    name: PARROT Benchmark Evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ====================================================================
+      # 1. 检出代码
+      # ====================================================================
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ====================================================================
+      # 2. 设置 Java 环境 (JDK 8)
+      # ====================================================================
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # ====================================================================
+      # 3. 设置 Python 环境 (Python 3.10)
+      # ====================================================================
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # ====================================================================
+      # 4. 编译 SDT Core 模块
+      # ====================================================================
+      - name: Build SDT Core
+        run: |
+          mvn clean test-compile -pl sdt-core -am -DskipTests
+
+      # ====================================================================
+      # 5. 下载 PARROT 官方数据集
+      # ====================================================================
+      - name: Cache or Download PARROT Dataset
+        run: |
+          mkdir -p benchmark/parrot-data
+          DATA_URL="${{ inputs.dataset_url }}"
+          if [ -z "$DATA_URL" ]; then
+            DATA_URL="https://huggingface.co/datasets/weizhoudb/PARROT/resolve/main/parrot_diverse.json"
+          fi
+          echo "Downloading dataset from: $DATA_URL"
+          curl -L -s -o benchmark/parrot-data/parrot_dataset.json "$DATA_URL" || true
+          
+          if [ ! -s benchmark/parrot-data/parrot_dataset.json ]; then
+            echo "⚠️ 下载远程数据集失败，退回使用本地内置样本数据集"
+            cp sdt-core/src/test/resources/parrot/parrot_full_cases.json benchmark/parrot-data/parrot_dataset.json
+          fi
+          echo "Dataset ready. File size: $(wc -c < benchmark/parrot-data/parrot_dataset.json) bytes"
+
+      # ====================================================================
+      # 6. 运行 SDT 批量离线翻译并导出预测结果 (JSON & CSV) 与分类统计
+      # ====================================================================
+      - name: Run SDT Translation & Export Predictions
+        run: |
+          mvn exec:java \
+            -Dexec.mainClass="com.translator.core.benchmark.ParrotBenchmarkRunner" \
+            -Dexec.classpathScope=test \
+            -Dexec.args="benchmark/parrot-data/parrot_dataset.json benchmark/parrot-data/sdt_predictions.json benchmark/parrot-data/summary_output.log" \
+            -pl sdt-core | tee benchmark/parrot-data/runner_output.log
+
+      # ====================================================================
+      # 7. 克隆 PARROT 官方评估工具并执行官方 ANTLR 语法校验与评估 (Official Evaluator)
+      # ====================================================================
+      - name: Clone PARROT Evaluator & Run Official Evaluation
+        run: |
+          echo "Cloning official PARROT benchmark repository..."
+          git clone --depth 1 https://github.com/weAIDB/PARROT.git benchmark/parrot-evaluator || true
+          
+          echo "Installing ANTLR4 & evaluation dependencies..."
+          pip install antlr4-python3-runtime sqlglot || true
+          
+          if [ -d "benchmark/parrot-evaluator" ] && [ -f "benchmark/parrot-evaluator/requirements.txt" ]; then
+            pip install -r benchmark/parrot-evaluator/requirements.txt || true
+          fi
+          
+          echo "Running PARROT Official Evaluator (ANTLR Syntax Check & Scoring)..."
+          python benchmark/official_evaluator.py \
+            --dataset benchmark/parrot-data/parrot_dataset.json \
+            --predictions benchmark/parrot-data/sdt_predictions.json \
+            --csv benchmark/parrot-data/sdt_predictions.csv \
+            --evaluator-dir benchmark/parrot-evaluator \
+            2>&1 | tee benchmark/parrot-data/official_eval.log || true
+
+      # ====================================================================
+      # 8. 生成 GitHub Action Step Summary 统计简报 (原生 Markdown 渲染)
+      # ====================================================================
+      - name: Generate Summary Report
+        if: always()
+        run: |
+          echo "## 🦜 SDT — PARROT Benchmark 自动评测报告" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f benchmark/parrot-data/summary_output.log ]; then
+            cat benchmark/parrot-data/summary_output.log >> $GITHUB_STEP_SUMMARY
+          elif [ -f benchmark/parrot-data/runner_output.log ]; then
+            echo "### ⚡ SDT 引擎转换统计" >> $GITHUB_STEP_SUMMARY
+            sed -n '/# 🦜 SDT - PARROT Benchmark/,$p' benchmark/parrot-data/runner_output.log >> $GITHUB_STEP_SUMMARY || true
+          else
+            echo "❌ 未找到 SDT 转换运行日志" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f benchmark/parrot-data/official_eval.log ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat benchmark/parrot-data/official_eval.log >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # ====================================================================
+      # 9. 归档 Artifacts 报告与预测文件 (包含含 syntaxPass 列的 sdt_predictions.csv)
+      # ====================================================================
+      - name: Upload Benchmark Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parrot-benchmark-report
+          path: |
+            benchmark/parrot-data/sdt_predictions.json
+            benchmark/parrot-data/sdt_predictions.csv
+            benchmark/parrot-data/summary_output.log
+            benchmark/parrot-data/runner_output.log
+            benchmark/parrot-data/official_eval.log

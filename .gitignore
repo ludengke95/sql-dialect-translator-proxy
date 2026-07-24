@@ -1,0 +1,82 @@
+# ============================================================================
+# SDT — SQL Dialect Translator  .gitignore
+# ============================================================================
+
+# === Maven ===
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# === IDE ===
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+.metadata/
+/bin/
+
+# VS Code
+.vscode/
+
+# NetBeans
+nbproject/
+nbdist/
+.nb-gradle/
+
+# === Java ===
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+
+# === OS ===
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Windows
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# === Runtime ===
+logs/
+*.pid
+*.log
+
+# === Misc ===
+*.swp
+*.swo
+*.bak
+*.tmp
+*.orig
+
+
+/.history
+/.codegraph
+/.omc
+/.trae
+
+# Reasonix
+.reasonix/
+/reasonix.toml
+
+# Python
+__pycache__/
+*.pyc
+
+/.workbuddy
+/tmp

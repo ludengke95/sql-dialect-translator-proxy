@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDT 业务系统模拟控制台</title>
+    <!-- Google Fonts Inter & Fira Code -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #070a13;
+            --card-bg: rgba(15, 22, 42, 0.65);
+            --card-border: rgba(255, 255, 255, 0.06);
+            --primary-color: #00d2ff;
+            --accent-color: #ab47bc;
+            --success-color: #00f5d4;
+            --error-color: #ff5252;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --font-code: 'Fira Code', 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 210, 255, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(171, 71, 188, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(15, 22, 42, 0.5) 0px, transparent 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 顶部导航栏 */
+        header {
+            border-bottom: 1px solid var(--card-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(7, 10, 19, 0.7);
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: #fff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.35);
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* 选项卡导航 */
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.15), rgba(171, 71, 188, 0.15));
+            border: 1px solid rgba(0, 210, 255, 0.25);
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.1);
+        }
+
+        /* 运行状态指示灯 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success-color);
+            box-shadow: 0 0 10px var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* 主体布局 */
+        main {
+            flex: 1;
+            padding: 2rem 2.5rem;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 指标卡片网格 */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 210, 255, 0.2);
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-unit {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-left: 0.25rem;
+        }
+
+        /* 二级布局：控制器与商品看板 */
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1100px) {
+            .dashboard-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            box-shadow: 0 0 8px var(--primary-color);
+        }
+
+        /* 锁控制开关样式 */
+        .lock-selector {
+            display: flex;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 0.25rem;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+        }
+
+        .lock-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .lock-btn.active {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 210, 255, 0.15);
+        }
+
+        /* 压测控制器 */
+        .pressure-group {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            padding: 1rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Switch 样式 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .3s;
+            border-radius: 34px;
+            border: 1px solid var(--card-border);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: rgba(0, 210, 255, 0.2);
+            border-color: rgba(0, 210, 255, 0.4);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+            background-color: var(--primary-color);
+            box-shadow: 0 0 8px var(--primary-color);
+        }
+
+        /* 滑块 */
+        .range-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .range-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--primary-color);
+            transition: transform 0.1s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* 按钮样式 */
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: #fff;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            outline: none;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), rgba(171, 71, 188, 0.8));
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 20px rgba(0, 210, 255, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-danger {
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid rgba(255, 82, 82, 0.2);
+            color: var(--error-color);
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 82, 82, 0.2);
+            border-color: var(--error-color);
+        }
+
+        /* 商品看板 */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            height: fit-content;
+        }
+
+        @media (max-width: 700px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1.25rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            border-color: rgba(171, 71, 188, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(171, 71, 188, 0.05);
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .product-name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .product-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .product-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stock-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .stock-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .stock-label {
+            color: var(--text-muted);
+        }
+
+        .stock-progress-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .stock-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color), #00d2ff);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .stock-progress-bar.warning {
+            background: linear-gradient(90deg, #ffb703, #ff5252);
+        }
+
+        .stock-progress-bar.danger {
+            background: var(--error-color);
+            box-shadow: 0 0 8px var(--error-color);
+        }
+
+        .product-meta {
+            display: flex;
+            gap: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding-top: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .meta-item strong {
+            color: #fff;
+            margin-left: 0.15rem;
+        }
+
+        /* 闪烁更新动画 */
+        @keyframes flash-update {
+            0% { background: rgba(0, 210, 255, 0.2); }
+            100% { background: transparent; }
+        }
+        .flash {
+            animation: flash-update 0.8s ease-out;
+        }
+
+        /* 审计墙日志栏 */
+        .audit-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            min-height: 400px;
+        }
+
+        .audit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .audit-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .audit-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .audit-log-container {
+            flex: 1;
+            max-height: 480px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding-right: 0.5rem;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .audit-row {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            display: grid;
+            grid-template-columns: 100px 80px 1fr auto 1fr;
+            align-items: center;
+            gap: 1rem;
+            font-family: var(--font-code);
+            font-size: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .audit-row.error-row {
+            border-left: 3px solid var(--error-color);
+            background: rgba(255, 82, 82, 0.03);
+        }
+
+        .audit-row.success-row {
+            border-left: 3px solid var(--success-color);
+        }
+
+        .audit-time {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .audit-status {
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            text-align: center;
+            width: fit-content;
+        }
+
+        .status-ok {
+            background: rgba(0, 245, 212, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-err {
+            background: rgba(255, 82, 82, 0.1);
+            color: var(--error-color);
+        }
+
+        .sql-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 0.5rem;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        .arrow-connector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .arrow-connector span {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* SQL 高亮样式 */
+        .sql-kw { color: #ff79c6; font-weight: 500; }
+        .sql-str { color: #f1fa8c; }
+        .sql-num { color: #bd93f9; }
+        .sql-identifier { color: #8be9fd; }
+
+        /* Playground Tab 样式 */
+        .playground-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            min-height: 500px;
+        }
+
+        @media (max-width: 900px) {
+            .playground-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .editor-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .sql-textarea {
+            width: 100%;
+            height: 250px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: #f8f9fa;
+            font-family: var(--font-code);
+            font-size: 0.85rem;
+            padding: 1rem;
+            outline: none;
+            resize: none;
+            line-height: 1.5;
+            transition: all 0.3s;
+        }
+
+        .sql-textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.15);
+        }
+
+        .results-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .result-table-container {
+            flex: 1;
+            overflow: auto;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            color: #cbd5e1;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            font-family: var(--font-code);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+            color: #fff;
+        }
+
+        .error-message-box {
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            color: var(--error-color);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* 快捷预设按钮 */
+        .preset-sql-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .preset-sql-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 0.4rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-sql-btn:hover {
+            background: rgba(0, 210, 255, 0.08);
+            color: var(--primary-color);
+            border-color: rgba(0, 210, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-group">
+            <div class="logo-badge">SDT Proxy</div>
+            <h1>真实业务系统模拟控制台</h1>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('simulator')">📊 业务模拟控制台</button>
+            <button class="tab-btn" onclick="switchTab('playground')">💻 自定义 SQL 终端</button>
+            <button class="tab-btn" onclick="switchTab('large-packet')">📦 大包性能测试</button>
+        </div>
+
+        <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span>Netty Proxy 在线</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Tab 1: 业务模拟控制台 -->
+        <div id="tab-simulator" class="tab-content active">
+            <!-- 指标概览 -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">订单总量</div>
+                    <div class="metric-value" id="metric-orders">0<span class="metric-unit">笔</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">累计成交额</div>
+                    <div class="metric-value" id="metric-revenue">0.00<span class="metric-unit">元</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">商品总剩余库存</div>
+                    <div class="metric-value" id="metric-stock">0<span class="metric-unit">件</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">平均 SQL 翻译耗时</div>
+                    <div class="metric-value" id="metric-duration">0.0<span class="metric-unit">ms</span></div>
+                </div>
+            </div>
+
+            <!-- 主看板 -->
+            <div class="dashboard-row">
+                <!-- 左侧控制面板 -->
+                <div class="control-panel">
+                    <div class="section-title">并发防超卖控制</div>
+                    <div class="lock-selector">
+                        <button id="lock-pessimistic" class="lock-btn active" onclick="setLockMode('pessimistic')">🔒 悲观锁 (FOR UPDATE)</button>
+                        <button id="lock-optimistic" class="lock-btn" onclick="setLockMode('optimistic')">⚡ 乐观锁 (Version)</button>
+                    </div>
+
+                    <div class="section-title">下单模拟器</div>
+                    <button class="btn btn-primary" onclick="triggerSingleOrder()">
+                        🛍️ 模拟单笔下单
+                    </button>
+
+                    <div class="pressure-group">
+                        <div class="toggle-container">
+                            <span class="toggle-label">⚡ 开启连续压力下单</span>
+                            <label class="switch">
+                                <input type="checkbox" id="pressure-switch" onchange="togglePressureTest()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="range-container">
+                            <div class="range-header">
+                                <span>模拟速度</span>
+                                <span id="pressure-speed-val">2 次/秒</span>
+                            </div>
+                            <input type="range" min="1" max="10" value="2" class="range-slider" id="pressure-speed" oninput="updatePressureSpeed(this.value)">
+                        </div>
+                    </div>
+
+                    <div class="section-title">系统管理</div>
+                    <button class="btn btn-danger" onclick="initDatabase()">
+                        🔄 重置系统数据 (Re-Init)
+                    </button>
+                </div>
+
+                <!-- 右侧商品列表 -->
+                <div class="products-grid" id="products-container">
+                    <!-- 动态生成商品卡片 -->
+                </div>
+            </div>
+
+            <!-- SQL 翻译审计墙 -->
+            <div class="audit-panel">
+                <div class="audit-header">
+                    <div class="audit-title">📜 实时 SQL 翻译审计流水 (透明代理转换对照)</div>
+                    <div class="audit-actions">
+                        <label class="switch">
+                            <input type="checkbox" id="auto-scroll" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span style="font-size:0.75rem; color: var(--text-muted)">自动滚动</span>
+                    </div>
+                </div>
+                <div class="audit-log-container" id="audit-logs">
+                    <!-- 动态加载 SQL 日志行 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Playground -->
+        <div id="tab-playground" class="tab-content">
+            <div class="playground-container">
+                <!-- 左侧编辑器 -->
+                <div class="editor-panel">
+                    <div class="section-title">输入 MySQL 语法 SQL</div>
+                    <textarea class="sql-textarea" id="playground-sql" placeholder="输入你想执行的 MySQL 语法 SQL..."></textarea>
+                    
+                    <div style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">快捷载入示例:</div>
+                    <div class="preset-sql-group">
+                        <button class="preset-sql-btn" onclick="loadPresetSql(1)">基本查询</button>
+                        <button class="preset-sql-btn" onclick="loadPresetSql(2)">标识符与反引号</button>
+                        <button class="preset-sql-btn" onclick="loadPresetSql(3)">方言函数 (IFNULL)</button>
+                        <button class="preset-sql-btn" onclick="loadPresetSql(4)">分页语法 (LIMIT)</button>
+                    </div>
+
+                    <button class="btn btn-primary" style="margin-top: 0.5rem;" onclick="executePlayground()">
+                        🚀 执行 SQL
+                    </button>
+                </div>
+
+                <!-- 右侧结果集 -->
+                <div class="results-panel">
+                    <div class="section-title">执行结果 (由 Postgres 返回)</div>
+                    <div class="result-table-container" id="playground-results">
+                        <div style="color: var(--text-muted); font-size: 0.8rem; padding: 1.5rem; text-align: center;">
+                            尚未执行任何查询。在左侧输入 SQL 并点击“执行 SQL”查看结果。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Large Packet Test -->
+        <div id="tab-large-packet" class="tab-content">
+            <div class="playground-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div class="editor-panel" style="width: 100%;">
+                    <div class="section-title">📦 MySQL 16MB+ 大包双向传输性能测试</div>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem;">
+                        本模块专门用于测试 SDT Proxy 的超大包分包接收（Decoder 重组）与分片写出（Encoder 切分）性能。
+                        测试过程中，我们将生成指定大小的超长字符串，执行 <code>INSERT</code> 写入大包表，随后执行 <code>SELECT</code> 查询读回全部大包内容，并在前端对比数据完整性。
+                    </p>
+                    
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                        <label for="packet-size" style="font-weight: 600; font-size: 0.9rem;">测试数据包大小 (MB):</label>
+                        <input type="number" id="packet-size" value="17" min="1" max="64" class="form-input" style="width: 100px; padding: 0.35rem 0.5rem; background: var(--card-bg); border: 1px solid var(--border); color: var(--text); border-radius: 4px; font-weight: bold; text-align: center;" />
+                        <button class="btn btn-primary" onclick="runLargePacketTest()" id="run-packet-btn">
+                            🚀 启动大包双向传输测试
+                        </button>
+                    </div>
+
+                    <!-- 运行状态与结果卡片 -->
+                    <div id="packet-test-result" style="display: none; padding: 1.5rem; border-radius: 6px; border: 1px solid var(--border); background: rgba(255,255,255,0.02);">
+                        <!-- 动态载入指标 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentLockMode = 'pessimistic';
+        let pressureIntervalId = null;
+        let pressureSpeed = 2; // 次/秒
+        let isRefreshing = false;
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshData();
+            // 每秒自动刷新看板数据与 SQL 审计日志
+            setInterval(refreshData, 1000);
+        });
+
+        // 切换 Tab
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // 设置并发锁模式
+        function setLockMode(mode) {
+            currentLockMode = mode;
+            document.querySelectorAll('.lock-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`lock-${mode}`).classList.add('active');
+        }
+
+        // 数据格式化 SQL 语法高亮
+        function highlightSql(sql) {
+            if (!sql) return '';
+            const keywords = [
+                'SELECT', 'UPDATE', 'INSERT', 'DELETE', 'FROM', 'WHERE', 'AND', 'OR', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'ON', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
+                'FOR UPDATE', 'NOW\\(\\)', 'IFNULL', 'COALESCE', 'CURRENT_TIMESTAMP', 'AUTO_INCREMENT', 'PRIMARY KEY', 'CREATE TABLE', 'DROP TABLE', 'IF EXISTS'
+            ];
+            let highlighted = sql;
+            keywords.forEach(kw => {
+                const regex = new RegExp(`\\b${kw}\\b`, 'gi');
+                highlighted = highlighted.replace(regex, match => `<span class="sql-kw">${match}</span>`);
+            });
+            // 字符串
+            highlighted = highlighted.replace(/('([^']|'')*')/g, '<span class="sql-str">$1</span>');
+            // 反引号
+            highlighted = highlighted.replace(/(`[^`]+`)/g, '<span class="sql-identifier">$1</span>');
+            // 数字
+            highlighted = highlighted.replace(/\b(\d+)\b/g, '<span class="sql-num">$1</span>');
+            return highlighted;
+        }
+
+        // 获取并刷新看板数据
+        function refreshData() {
+            if (isRefreshing) return;
+            isRefreshing = true;
+
+            // 1. 获取面板数据
+            fetch('/api/simulate/dashboard')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('metric-orders').innerHTML = `${data.totalOrders}<span class="metric-unit">笔</span>`;
+                    document.getElementById('metric-revenue').innerHTML = `${data.totalRevenue.toFixed(2)}<span class="metric-unit">元</span>`;
+                    document.getElementById('metric-stock').innerHTML = `${data.totalStock}<span class="metric-unit">件</span>`;
+                    document.getElementById('metric-duration').innerHTML = `${data.avgSqlDurationMs.toFixed(1)}<span class="metric-unit">ms</span>`;
+
+                    renderProducts(data.products);
+                })
+                .catch(err => console.error("Refresh dashboard failed", err));
+
+            // 2. 获取审计日志
+            fetch('/api/simulate/audit')
+                .then(res => res.json())
+                .then(logs => {
+                    renderAuditLogs(logs);
+                })
+                .catch(err => console.error("Refresh audits failed", err))
+                .finally(() => {
+                    isRefreshing = false;
+                });
+        }
+
+        // 渲染商品列表
+        let prevStocks = {};
+        function renderProducts(products) {
+            const container = document.getElementById('products-container');
+            const cardsHtml = products.map(p => {
+                const percent = (p.stock / 100) * 100; // 假设初始 100 为 100%
+                let progressClass = '';
+                if (percent < 10) {
+                    progressClass = 'danger';
+                } else if (percent < 30) {
+                    progressClass = 'warning';
+                }
+
+                // 判断是否变化，加入 flash 闪烁动画
+                const hasChanged = prevStocks[p.id] !== undefined && prevStocks[p.id] !== p.stock;
+                const flashClass = hasChanged ? 'flash' : '';
+                prevStocks[p.id] = p.stock;
+
+                return `
+                    <div class="product-card ${flashClass}">
+                        <div class="product-header">
+                            <div>
+                                <div class="product-name">${p.name}</div>
+                                <div class="product-desc">${p.description}</div>
+                            </div>
+                            <div class="product-price">¥ ${p.price.toFixed(2)}</div>
+                        </div>
+                        <div class="stock-section">
+                            <div class="stock-info">
+                                <span class="stock-label">剩余库存</span>
+                                <strong style="color: ${p.stock < 10 ? 'var(--error-color)' : '#fff'}">${p.stock} 件</strong>
+                            </div>
+                            <div class="stock-progress-bg">
+                                <div class="stock-progress-bar ${progressClass}" style="width: ${Math.min(percent, 100)}%"></div>
+                            </div>
+                        </div>
+                        <div class="product-meta">
+                            <div class="meta-item">累计销量: <strong>${p.sold_count} 件</strong></div>
+                            <div class="meta-item">并发版本: <strong>v ${p.version}</strong></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.innerHTML = cardsHtml;
+        }
+
+        // 渲染审计日志
+        function renderAuditLogs(logs) {
+            const container = document.getElementById('audit-logs');
+            const isAtBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
+
+            const logRowsHtml = logs.map(log => {
+                const statusClass = log.success ? 'status-ok' : 'status-err';
+                const rowClass = log.success ? 'success-row' : 'error-row';
+                const statusText = log.success ? 'success' : 'failed';
+
+                let rightContentHtml = `<div class="sql-box">${highlightSql(log.translatedSql)}</div>`;
+                if (!log.success) {
+                    rightContentHtml = `<div class="error-message-box">❌ Execution Error:<br>${log.errorMessage}</div>`;
+                }
+
+                return `
+                    <div class="audit-row ${rowClass}">
+                        <div class="audit-time">${log.timestamp}</div>
+                        <div class="audit-status ${statusClass}">${statusText}</div>
+                        <div class="sql-box">${highlightSql(log.originalSql)}</div>
+                        <div class="arrow-connector">
+                            ➡️
+                            <span>${log.durationMs}ms</span>
+                        </div>
+                        ${rightContentHtml}
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = logRowsHtml;
+
+            // 自动滚动到底部
+            if (document.getElementById('auto-scroll').checked && isAtBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // 单笔下单
+        function triggerSingleOrder() {
+            fetch(`/api/simulate/order?lockMode=${currentLockMode}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showFloatingMessage(`🛒 下单成功! 订单号: ${data.orderId}, 买家: ${data.buyerName}, 金额: ¥${data.totalAmount}`, 'var(--success-color)');
+                    } else {
+                        showFloatingMessage(`❌ 下单失败: ${data.error}`, 'var(--error-color)');
+                    }
+                    refreshData();
+                })
+                .catch(err => {
+                    showFloatingMessage(`❌ 网络错误: ${err.message}`, 'var(--error-color)');
+                });
+        }
+
+        // 压力下单测试
+        function togglePressureTest() {
+            const checkbox = document.getElementById('pressure-switch');
+            if (checkbox.checked) {
+                startPressureTest();
+            } else {
+                stopPressureTest();
+            }
+        }
+
+        function startPressureTest() {
+            stopPressureTest();
+            const delay = 1000 / pressureSpeed;
+            pressureIntervalId = setInterval(() => {
+                fetch(`/api/simulate/order?lockMode=${currentLockMode}`, { method: 'POST' })
+                    .then(() => refreshData())
+                    .catch(err => console.error("Pressure test order request failed", err));
+            }, delay);
+            showFloatingMessage(`⚡ 压力下单已开启，速度: ${pressureSpeed} 次/秒`, 'var(--primary-color)');
+        }
+
+        function stopPressureTest() {
+            if (pressureIntervalId) {
+                clearInterval(pressureIntervalId);
+                pressureIntervalId = null;
+            }
+        }
+
+        function updatePressureSpeed(val) {
+            pressureSpeed = parseInt(val);
+            document.getElementById('pressure-speed-val').innerText = `${pressureSpeed} 次/秒`;
+            if (document.getElementById('pressure-switch').checked) {
+                // 如果已经在跑，则重启以更新速度
+                startPressureTest();
+            }
+        }
+
+        // 初始化数据
+        function initDatabase() {
+            if (confirm("确定要清空数据库并重新初始化商品数据吗？")) {
+                stopPressureTest();
+                document.getElementById('pressure-switch').checked = false;
+                
+                fetch('/api/simulate/init', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showFloatingMessage('🔄 数据库初始化成功！4 种商品库存已重置。', 'var(--success-color)');
+                        } else {
+                            showFloatingMessage('❌ 数据库初始化失败: ' + data.error, 'var(--error-color)');
+                        }
+                        refreshData();
+                    })
+                    .catch(err => {
+                        showFloatingMessage('❌ 错误: ' + err.message, 'var(--error-color)');
+                    });
+            }
+        }
+
+        // 悬浮提示框
+        function showFloatingMessage(text, color) {
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '2rem';
+            toast.style.right = '2.5rem';
+            toast.style.background = 'var(--card-bg)';
+            toast.style.border = `1px solid ${color || 'var(--card-border)'}`;
+            toast.style.color = '#fff';
+            toast.style.padding = '0.75rem 1.5rem';
+            toast.style.borderRadius = '12px';
+            toast.style.fontFamily = 'Inter, sans-serif';
+            toast.style.fontSize = '0.85rem';
+            toast.style.fontWeight = '500';
+            toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+            toast.style.zIndex = '1000';
+            toast.style.backdropFilter = 'blur(15px)';
+            toast.style.animation = 'fadeIn 0.2s ease-out';
+            toast.innerText = text;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'fadeIn 0.2s ease-out reverse';
+                setTimeout(() => toast.remove(), 200);
+            }, 3000);
+        }
+
+        // ==================== Playground ====================
+        function loadPresetSql(num) {
+            const area = document.getElementById('playground-sql');
+            if (num === 1) {
+                area.value = "SELECT * FROM `products` ORDER BY `id` ASC";
+            } else if (num === 2) {
+                area.value = "SELECT `id`, `name`, `stock` FROM `products` WHERE `price` >= 5000.00";
+            } else if (num === 3) {
+                area.value = "SELECT id, IFNULL(name, '无名') as name, IFNULL(description, '暂无') as description FROM products";
+            } else if (num === 4) {
+                area.value = "SELECT * FROM `products` ORDER BY `price` DESC LIMIT 2 OFFSET 1";
+            }
+        }
+
+        function executePlayground() {
+            const sqlText = document.getElementById('playground-sql').value;
+            if (!sqlText || sqlText.trim().isEmpty) {
+                alert("请输入 SQL 语句！");
+                return;
+            }
+
+            const resultsContainer = document.getElementById('playground-results');
+            resultsContainer.innerHTML = `<div style="color:var(--primary-color); font-size:0.8rem; padding:1.5rem; text-align:center;">⌛ Querying Proxy...</div>`;
+
+            fetch('/api/simulate/playground', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sql: sqlText })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(errData => { throw new Error(errData.error || "Execution error"); });
+                }
+                return res.json();
+            })
+            .then(data => {
+                refreshData(); // 执行完立即刷新外围
+
+                if (Array.isArray(data)) {
+                    if (data.length === 0) {
+                        resultsContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.8rem; padding: 1.5rem; text-align: center;">✅ 执行成功，返回了一个空结果集。</div>`;
+                        return;
+                    }
+                    // 渲染表格
+                    const headers = Object.keys(data[0]);
+                    const tableHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    ${headers.map(h => `<th>${h}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.map(row => `
+                                    <tr>
+                                        ${headers.map(h => `<td>${row[h] !== null ? row[h] : '<span style="color:var(--text-muted)">NULL</span>'}</td>`).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    resultsContainer.innerHTML = tableHtml;
+                } else {
+                    // 渲染 Update Count
+                    resultsContainer.innerHTML = `
+                        <div style="padding: 1.5rem; font-size: 0.85rem; line-height: 1.6;">
+                            <strong style="color: var(--success-color);">✅ 执行成功!</strong><br>
+                            受影响行数 (Rows Affected): <strong>${data.updateCount}</strong><br>
+                            耗时 (Duration): <strong>${data.durationMs} ms</strong>
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => {
+                resultsContainer.innerHTML = `<div class="error-message-box">❌ SQL Execution Failed:<br>${err.message}</div>`;
+            });
+        }
+
+        function runLargePacketTest() {
+            const size = parseInt(document.getElementById('packet-size').value);
+            if (isNaN(size) || size <= 0 || size > 64) {
+                alert('请输入 1 至 64 之间的整数作为包体大小（MB）');
+                return;
+            }
+
+            const btn = document.getElementById('run-packet-btn');
+            const resultBox = document.getElementById('packet-test-result');
+            
+            btn.disabled = true;
+            btn.innerText = '⌛ 正在执行大包双向传输测试中 (请耐心等待)...';
+            resultBox.style.display = 'block';
+            resultBox.innerHTML = `
+                <div style="text-align: center; color: var(--primary-color); font-size: 0.9rem; padding: 1rem;">
+                    <div style="margin-bottom: 0.5rem; font-weight: bold;">🚀 传输测试进行中...</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.6; text-align: left; max-width: 400px; margin: 0 auto;">
+                        • 阶段一: 正在内存中生成 ${size}MB 文本字符串...<br>
+                        • 阶段二: 发送 INSERT 请求 (Client -> Proxy -> PGDB，校验 Decoder 重组逻辑)...<br>
+                        • 阶段三: 发送 SELECT 请求 (PGDB -> Proxy -> Client，校验 Encoder 分片逻辑)...<br>
+                        • 阶段四: 前端数据一致性比对与耗时统计...
+                    </div>
+                </div>
+            `;
+
+            fetch(`/api/simulate/large-packet?sizeMb=${size}`, {
+                method: 'POST'
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(errData => { throw new Error(errData.error || "大包传输测试异常"); });
+                }
+                return res.json();
+            })
+            .then(data => {
+                btn.disabled = false;
+                btn.innerText = '🚀 启动大包双向传输测试';
+                refreshData(); // 刷新大盘审计日志
+
+                if (data.success && data.dataMatched) {
+                    resultBox.innerHTML = `
+                        <div style="border-left: 4px solid var(--success-color); padding-left: 1rem;">
+                            <h4 style="color: var(--success-color); margin-bottom: 0.5rem;">🎉 大数据包双向传输测试成功！</h4>
+                            <p style="font-size: 0.85rem; line-height: 1.6; margin: 0; color: var(--text);">
+                                • 测试包体大小: <strong>${data.packetSizeMb} MB</strong> (共计 ${data.readLength.toLocaleString()} 字符)<br>
+                                • 内存字符生成耗时: <strong>${data.generateTimeMs} ms</strong><br>
+                                • 写入大包耗时 (Client -> Proxy -> DB): <strong>${data.writeTimeMs} ms</strong><br>
+                                • 读取大包耗时 (DB -> Proxy -> Client): <strong>${data.readTimeMs} ms</strong><br>
+                                • 数据库清理耗时: <strong>${data.cleanTimeMs} ms</strong><br>
+                                • 链路往返总耗时: <strong>${data.totalTimeMs} ms</strong><br>
+                                • 传输一致性验证: <span style="color:var(--success-color); font-weight:bold;">PASS (100% 字节吻合)</span>
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    resultBox.innerHTML = `
+                        <div style="border-left: 4px solid var(--error-color); padding-left: 1rem;">
+                            <h4 style="color: var(--error-color); margin-bottom: 0.5rem;">❌ 传输数据校验不一致！</h4>
+                            <p style="font-size: 0.85rem; line-height: 1.6; margin: 0; color: var(--text);">
+                                • 测试包体大小: <strong>${data.packetSizeMb} MB</strong><br>
+                                • 写入大包耗时: <strong>${data.writeTimeMs} ms</strong><br>
+                                • 读取大包耗时: <strong>${data.readTimeMs} ms</strong><br>
+                                • 读回字符数: <strong>${data.readLength}</strong><br>
+                                • 传输一致性验证: <span style="color:var(--error-color); font-weight:bold;">FAILED (数据损坏或丢失)</span>
+                            </p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerText = '🚀 启动大包双向传输测试';
+                resultBox.innerHTML = `
+                    <div class="error-message-box" style="border-left: 4px solid var(--error-color); padding-left: 1rem; background: rgba(239, 68, 68, 0.05); padding: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--error-color);">❌ 大数据包双向传输测试失败 (报错):</h4>
+                        <div style="font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; line-height: 1.4; color: var(--text);">${err.message}</div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+# ============================================================================
+# SDTP 配置文件
+# ============================================================================
+# 修改此文件后重启 Proxy:  ./bin/start.sh restart   或   bin\start.bat stop && bin\start.bat start
+# 也可通过环境变量指定其他配置文件:  export PROXY_CONFIG=/path/to/other-config.yml
+# ============================================================================
+
+proxy:
+  # Proxy 监听的端口（客户端连接此端口）
+  port: 7788
+
+  # 客户端认证信息（客户端用此账密连接 Proxy）
+  auth:
+    user: root
+    password: proxy_password
+
+# ============================================================================
+# 后端数据库实例列表（新格式）
+# ============================================================================
+# 客户端连接时指定的 database 名称（JDBC URL 或 USE 语句）需匹配某个 backends name。
+# 未匹配时自动使用第一个 backends。
+# ============================================================================
+backends:
+  - name: mydb1
+    # 目标数据库方言: POSTGRESQL | MYSQL | ORACLE | SQLSERVER
+    dialect: POSTGRESQL
+    # 目标数据库 JDBC URL
+    jdbc-url: jdbc:postgresql://10.110.60.1:5432/mydb1
+    # 目标数据库账密
+    username: dbuser
+    password: dbpass
+    # 连接池配置
+    max-pool-size: 20
+    min-idle: 2
+
+  - name: mydb2
+    dialect: POSTGRESQL
+    jdbc-url: jdbc:postgresql://10.110.60.2:5432/mydb2
+    username: dbuser
+    password: dbpass
+    max-pool-size: 20
+    min-idle: 2
+
+# ============================================================================
+# SQL 翻译配置（源 MySQL 方言 → 目标方言，仅当 dialect ≠ MYSQL 时生效）
+# ============================================================================
+translation:
+  # 关键词大小写：UPPER（默认）| LOWER
+  keyword-case: UPPER
+
+  # 标识符大小写：LOWER（默认）| UPPER | UNCHANGED
+  #   PostgreSQL/HighGo 推荐 LOWER（因为 PG 会把未引用标识符自动转小写）
+  #   Oracle/DM 推荐 UPPER
+  #   MySQL 推荐 UNCHANGED（翻译禁用时此项无意义）
+  identifier-case: LOWER

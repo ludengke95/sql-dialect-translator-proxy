@@ -1,0 +1,205 @@
+classDiagram
+    %% ===== SPI 核心接口 =====
+    class FrontendProtocol {
+        <<interface>>
+        +id() String
+        +getSourceDialect() String
+        +newDecoder(maxPacketSize long) ByteToMessageDecoder
+        +newEncoder() ChannelHandler
+        +newHandshakeHandler(AuthConfig, EventExecutorGroup) ChannelHandler
+        +newCommandHandler() ChannelHandler
+        +newResponseWriter() ResponseWriter
+        +newTypeMapper() TypeMapper
+        +newSystemCatalog() SystemCatalogProvider
+        +defaultPort() int
+    }
+
+    class AuthConfig {
+        -user String
+        -password String
+        +AuthConfig(user, password)
+        +getUser() String
+        +getPassword() String
+    }
+
+    class ResponseWriter {
+        <<interface>>
+        +writeOk(ctx ChannelHandlerContext, affectedRows long, lastInsertId long, info String) void
+        +writeErr(ctx ChannelHandlerContext, errorCode int, sqlState String, message String) void
+        +writeResultSet(ctx ChannelHandlerContext, rs ResultSet, seqGen SeqGenerator) void
+        +writeEmptyResultSet(ctx ChannelHandlerContext, affectedRows long, lastInsertId long) void
+    }
+
+    class TypeMapper {
+        <<interface>>
+        +jdbcToProtocolType(jdbcType int) int
+        +defaultColumnLength(jdbcType int) int
+        +isBinary(jdbcType int) boolean
+        +charsetUtf8() int
+        +charsetBinary() int
+    }
+
+    class SystemCatalogProvider {
+        <<interface>>
+        +intercept(sql String, database String) InterceptResult
+        +isSetStatement(sql String) boolean
+        +extractUseDatabase(sql String) String
+        +setVariable(name String, value String) void
+        +getVariables() Map~String,String~
+    }
+
+    class SessionStatementHandler {
+        <<interface>>
+        +isShowDatabases(sql String) boolean
+        +handleShowDatabases(ctx ChannelHandlerContext, sql String, session FrontendSession, backendNames Set~String~) void
+        +isSetAutoCommit(sql String) boolean
+        +handleSetAutoCommit(ctx ChannelHandlerContext, sql String, session FrontendSession) void
+        +isBegin(sql String) boolean
+        +isCommit(sql String) boolean
+        +isRollback(sql String) boolean
+    }
+
+    class ProtocolRegistry {
+        -protocols Map~String,FrontendProtocol~
+        +ProtocolRegistry()
+        +getProtocol(protocolId String) FrontendProtocol
+        +getDefaultProtocol() FrontendProtocol
+        +getAvailableProtocols() Set~String~
+    }
+
+    class SeqGenerator {
+        -seq int
+        +SeqGenerator()
+        +next() byte
+        +peek() byte
+    }
+
+    class InterceptResult {
+        +colName1 String
+        +colName2 String
+        +colName3 String
+        +value1 String
+        +value2 String
+        +twoColumns boolean
+        +empty boolean
+        +columns List~ColumnInfo~
+        +isMultiColumn() boolean
+    }
+
+    class ColumnInfo {
+        +columnName String
+        +value String
+    }
+
+    %% ===== MySQL SPI 实现 =====
+    class MySQLFrontendProtocol {
+        +id() String
+        +getSourceDialect() String
+        +defaultPort() int
+        +newDecoder(long) ByteToMessageDecoder
+        +newEncoder() ChannelHandler
+        +newHandshakeHandler(AuthConfig, EventExecutorGroup) ChannelHandler
+        +newCommandHandler() ChannelHandler
+        +newResponseWriter() ResponseWriter
+        +newTypeMapper() TypeMapper
+        +newSystemCatalog() SystemCatalogProvider
+    }
+
+    class MySQLResponseWriter {
+        -typeMapper TypeMapper
+        +writeOk(...) void
+        +writeErr(...) void
+        +writeResultSet(ctx, rs, seqGen) void
+        +writeEmptyResultSet(ctx, affectedRows, lastInsertId) void
+    }
+
+    class MySQLTypeMapper {
+        -CHARSET_UTF8MB4 int
+        -CHARSET_BINARY int
+        +jdbcToProtocolType(int) int
+        +defaultColumnLength(int) int
+        +isBinary(int) boolean
+        +charsetUtf8() int
+        +charsetBinary() int
+    }
+
+    class MySQLSystemCatalogProvider {
+        -SYSTEM_VARIABLES Map~String,String~
+        +canHandle(String) boolean
+        +handleQuery(ctx, sql, session) void
+        +getVariables() Map~String,String~
+        +setSystemVariable(String, String) void
+        +isSetStatement(String) boolean
+        +extractUseDatabase(String) String
+    }
+
+    %% ===== PG SPI 实现 =====
+    class PostgreSQLFrontendProtocol {
+        +id() String
+        +getSourceDialect() String
+        +defaultPort() int
+        +newDecoder(long) ByteToMessageDecoder
+        +newEncoder() ChannelHandler
+        +newHandshakeHandler(AuthConfig, EventExecutorGroup) ChannelHandler
+        +newCommandHandler() ChannelHandler
+        +newResponseWriter() ResponseWriter
+        +newTypeMapper() TypeMapper
+        +newSystemCatalog() SystemCatalogProvider
+    }
+
+    class PgResponseWriter {
+        +writeOk(...) void
+        +writeErr(...) void
+        +writeResultSet(ctx, rs, seqGen) void
+    }
+
+    class PgTypeMapper {
+        +jdbcToProtocolType(int) int
+    }
+
+    class PgSystemCatalogProvider {
+        +intercept(String, String) InterceptResult
+    }
+
+    class PgCommandDispatcher
+    class PgHandshakeHandler
+    class PgPacketDecoder
+    class PgPacketEncoder
+    class PgAuth
+    class PgWire
+    class PgMessage
+    class PgRawMessage
+    class PgOid
+
+    %% ===== 关系 =====
+    FrontendProtocol <|.. MySQLFrontendProtocol : implements
+    FrontendProtocol <|.. PostgreSQLFrontendProtocol : implements
+    
+    MySQLFrontendProtocol ..> MySQLResponseWriter : creates
+    MySQLFrontendProtocol ..> MySQLTypeMapper : creates
+    MySQLFrontendProtocol ..> MySQLSystemCatalogProvider : creates
+    
+    PostgreSQLFrontendProtocol ..> PgResponseWriter : creates
+    PostgreSQLFrontendProtocol ..> PgTypeMapper : creates
+    PostgreSQLFrontendProtocol ..> PgSystemCatalogProvider : creates
+    PostgreSQLFrontendProtocol ..> PgCommandDispatcher : creates
+    PostgreSQLFrontendProtocol ..> PgHandshakeHandler : creates
+    PostgreSQLFrontendProtocol ..> PgPacketDecoder : creates
+    PostgreSQLFrontendProtocol ..> PgPacketEncoder : creates
+
+    ProtocolRegistry --> FrontendProtocol : manages
+    ProtocolRegistry ..> AuthConfig : uses
+    
+    MySQLResponseWriter ..|> ResponseWriter : implements
+    PgResponseWriter ..|> ResponseWriter : implements
+    
+    MySQLTypeMapper ..|> TypeMapper : implements
+    PgTypeMapper ..|> TypeMapper : implements
+    
+    MySQLSystemCatalogProvider ..|> SystemCatalogProvider : implements
+    PgSystemCatalogProvider ..|> SystemCatalogProvider : implements
+
+    ResponseWriter ..> TypeMapper : uses
+    ResponseWriter ..> SeqGenerator : uses
+    MySQLSystemCatalogProvider --> InterceptResult : returns
+    InterceptResult --> ColumnInfo : contains

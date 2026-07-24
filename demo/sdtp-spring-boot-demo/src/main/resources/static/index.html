@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDT Proxy Demo Playground</title>
+    <!-- Google Fonts Inter & Fira Code -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 30, 49, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-color: #3b82f6; /* Blue for Proxy */
+            --primary-hover: #60a5fa;
+            --accent-color: #8b5cf6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            border-bottom: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: #fff;
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            background: linear-gradient(to right, #fff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        main {
+            flex: 1;
+            padding: 2.5rem 2rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            min-width: 0;
+        }
+
+        .datasource-select-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+        }
+
+        .datasource-select-container label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        #db-select {
+            background: rgba(10, 15, 30, 0.6);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        #db-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+
+        #db-select option {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .panel-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            box-shadow: 0 0 8px var(--primary-color);
+        }
+
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 0.5rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary-hover);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .editor-container {
+            position: relative;
+            width: 100%;
+        }
+
+        textarea {
+            width: 100%;
+            height: 220px;
+            background: rgba(10, 15, 30, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: #e5e7eb;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            padding: 1.25rem;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: #fff;
+            border: none;
+            padding: 0.85rem 1.75rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+        }
+
+        .btn-run:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-run:active {
+            transform: translateY(1px);
+        }
+
+        .btn-run:disabled {
+            background: var(--card-border);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .meta-stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            padding: 0.5rem 0.85rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .results-panel {
+            min-height: 400px;
+        }
+
+        .status-badge {
+            margin-left: auto;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        pre {
+            background: rgba(10, 15, 30, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            overflow: auto;
+            flex: 1;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #38bdf8;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            max-height: 520px;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            margin: auto 0;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .placeholder-icon {
+            font-size: 2rem;
+            opacity: 0.5;
+        }
+
+        footer {
+            border-top: 1px solid var(--card-border);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(11, 15, 25, 0.8);
+            backdrop-filter: blur(12px);
+        }
+
+        .loader {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #fff;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <span class="logo-badge">SDTP</span>
+            <h1>SQL Dialect Translator</h1>
+            <span class="tagline">SDT Proxy 模式</span>
+        </div>
+        <div class="tagline">连接驱动: com.mysql.cj.jdbc.Driver</div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2 class="panel-title">输入 MySQL 语法 SQL</h2>
+            
+            <div class="presets">
+                <button class="preset-btn" onclick="loadSql(1)">查询全部数据</button>
+                <button class="preset-btn" onclick="loadSql(2)">MySQL 反引号与过滤</button>
+                <button class="preset-btn" onclick="loadSql(3)">MySQL IFNULL 函数</button>
+                <button class="preset-btn" onclick="loadSql(4)">MySQL 分页 LIMIT</button>
+            </div>
+
+            <div class="datasource-select-container">
+                <label for="db-select">选择数据源 (DB):</label>
+                <select id="db-select" onchange="switchDatabase()">
+                    <option value="">正在加载数据源...</option>
+                </select>
+            </div>
+
+            <div class="editor-container">
+                <textarea id="sql-editor" placeholder="在此输入您的 MySQL 语法 SQL 语句..."></textarea>
+            </div>
+
+            <button id="run-btn" class="btn-run" onclick="executeSql()">
+                <span class="run-icon">▶</span>
+                <span>执行 SQL</span>
+            </button>
+
+            <div class="meta-stats">
+                <div class="stat-item">
+                    <span>代理端地址:</span>
+                    <span class="stat-value">localhost:7788</span>
+                </div>
+                <div class="stat-item">
+                    <span>目标数据库:</span>
+                    <span id="target-name" class="stat-value">加载中...</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel results-panel">
+            <h2 class="panel-title">
+                <span>执行结果</span>
+                <span id="status-badge" class="status-badge"></span>
+            </h2>
+
+            <div id="placeholder" class="placeholder-text">
+                <span class="placeholder-icon">⚡</span>
+                <span>点击“执行 SQL”按钮，这里将以 JSON 结构展示执行结果以及耗时</span>
+            </div>
+
+            <pre id="output" style="display: none;"></pre>
+
+            <div id="stats" class="meta-stats" style="display: none; margin-top: auto;">
+                <div class="stat-item">
+                    <span>耗时:</span>
+                    <span id="elapsed-time" class="stat-value">0ms</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 SQL Dialect Translator. Powered by Java 8, Netty & Spring Boot.</p>
+    </footer>
+
+    <script>
+        const sqls = {
+            1: "SELECT * FROM demo_users ORDER BY id ASC",
+            2: "SELECT `id`, `name`, `age` FROM `demo_users` WHERE `age` >= 30",
+            3: "SELECT id, IFNULL(name, '无名氏') as user_name FROM demo_users",
+            4: "SELECT * FROM demo_users LIMIT 2 OFFSET 1"
+        };
+
+        let selectedDb = '';
+
+        function loadSql(id) {
+            document.getElementById('sql-editor').value = sqls[id];
+        }
+
+        function switchDatabase() {
+            const dbSelect = document.getElementById('db-select');
+            selectedDb = dbSelect.value;
+            document.getElementById('target-name').textContent = selectedDb || '默认数据源';
+        }
+
+        // 默认加载第一个
+        loadSql(1);
+        loadConfig();
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('/info');
+                if (response.ok) {
+                    const data = await response.json();
+                    const dbSelect = document.getElementById('db-select');
+                    dbSelect.innerHTML = '';
+                    
+                    if (data.databases && data.databases.length > 0) {
+                        data.databases.forEach(db => {
+                            const option = document.createElement('option');
+                            option.value = db;
+                            option.textContent = db;
+                            dbSelect.appendChild(option);
+                        });
+                        
+                        if (data.currentDb) {
+                            dbSelect.value = data.currentDb;
+                            selectedDb = data.currentDb;
+                        } else {
+                            selectedDb = data.databases[0];
+                        }
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = '无可用数据库';
+                        dbSelect.appendChild(option);
+                        selectedDb = '';
+                    }
+                    document.getElementById('target-name').textContent = selectedDb || '未知';
+                } else {
+                    document.getElementById('target-name').textContent = '加载失败';
+                }
+            } catch (err) {
+                document.getElementById('target-name').textContent = '加载失败';
+            }
+        }
+
+        async function executeSql() {
+            const editor = document.getElementById('sql-editor');
+            const runBtn = document.getElementById('run-btn');
+            const placeholder = document.getElementById('placeholder');
+            const output = document.getElementById('output');
+            const stats = document.getElementById('stats');
+            const elapsedTime = document.getElementById('elapsed-time');
+            const statusBadge = document.getElementById('status-badge');
+
+            const sql = editor.value.trim();
+            if (!sql) return;
+
+            // UI Loading 状态
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<span class="loader"></span> <span>执行中...</span>';
+            placeholder.style.display = 'none';
+            output.style.display = 'none';
+            stats.style.display = 'none';
+            statusBadge.style.display = 'none';
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ sql, db: selectedDb })
+                });
+
+                const data = await response.json();
+                const duration = Math.round(performance.now() - startTime);
+
+                output.style.display = 'block';
+                stats.style.display = 'flex';
+                elapsedTime.textContent = `${duration}ms`;
+                statusBadge.style.display = 'inline-block';
+
+                if (response.ok) {
+                    output.textContent = JSON.stringify(data, null, 2);
+                    output.style.color = '#38bdf8'; // Success color
+                    statusBadge.className = 'status-badge status-success';
+                    statusBadge.textContent = 'SUCCESS';
+                } else {
+                    output.textContent = JSON.stringify(data, null, 2);
+                    output.style.color = '#f87171'; // Error color
+                    statusBadge.className = 'status-badge status-error';
+                    statusBadge.textContent = 'ERROR';
+                }
+            } catch (err) {
+                const duration = Math.round(performance.now() - startTime);
+                output.style.display = 'block';
+                output.textContent = `请求失败: ${err.message}`;
+                output.style.color = '#f87171';
+                statusBadge.style.display = 'inline-block';
+                statusBadge.className = 'status-badge status-error';
+                statusBadge.textContent = 'FAIL';
+                stats.style.display = 'flex';
+                elapsedTime.textContent = `${duration}ms`;
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerHTML = '<span class="run-icon">▶</span> <span>执行 SQL</span>';
+            }
+        }
+    </script>
+</body>
+</html>

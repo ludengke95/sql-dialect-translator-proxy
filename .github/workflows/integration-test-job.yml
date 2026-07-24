@@ -1,0 +1,365 @@
+# =============================================================================
+# SDTP 多协议多后端集成测试 — 可复用工作流
+#
+# 被 sdtp-integration-test.yml 调用。
+# 统一支持:
+#   - 前端 MySQL -> 后端 PostgreSQL
+#   - 前端 PostgreSQL -> 后端 MySQL
+# =============================================================================
+
+name: SDTP Integration Test Job
+
+on:
+  workflow_call:
+    inputs:
+      test_mode:
+        description: '测试模式 (mysql-client-5/8, mysql-jdbc-5/8, python-mysql, pg-client, pg-jdbc, python-pg)'
+        type: string
+        required: true
+      frontend_protocol:
+        description: '前端协议 (MYSQL / POSTGRESQL)'
+        type: string
+        required: false
+        default: 'MYSQL'
+      backend_type:
+        description: '后端数据库类型 (postgres / mysql)'
+        type: string
+        required: false
+        default: 'postgres'
+      backend_dialect:
+        description: 'SDTP 后端方言标识 (POSTGRESQL / MYSQL)'
+        type: string
+        required: false
+        default: 'POSTGRESQL'
+      backend_user:
+        description: '后端数据库用户'
+        type: string
+        required: true
+      backend_password:
+        description: '后端数据库密码'
+        type: string
+        required: true
+      backend_db:
+        description: '后端数据库名'
+        type: string
+        required: true
+      backend_port:
+        description: '后端数据库端口'
+        type: string
+        required: true
+        default: '5432'
+      sdtp_user:
+        description: 'SDTP 代理用户'
+        type: string
+        required: true
+      sdtp_password:
+        description: 'SDTP 代理密码'
+        type: string
+        required: true
+      sdtp_port:
+        description: 'SDTP 代理监听端口'
+        type: string
+        required: true
+        default: '3306'
+      extra_docker_image_artifact:
+        description: '额外 Docker 镜像 artifact 名称'
+        type: string
+        required: false
+        default: ''
+      extra_docker_image_file:
+        description: '额外 Docker 镜像 tar.gz 文件名'
+        type: string
+        required: false
+        default: ''
+      report_name:
+        description: '测试报告 artifact 名称'
+        type: string
+        required: true
+      summary_title:
+        description: 'Step Summary 标题'
+        type: string
+        required: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # ====================================================================
+      # 1. 检出代码
+      # ====================================================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ====================================================================
+      # 2. 下载镜像 Artifact
+      # ====================================================================
+      - name: Download SDTP Docker image
+        uses: actions/download-artifact@v4
+        with:
+          name: sdtp-docker-image
+          path: /tmp/
+
+      - name: Download extra Docker image
+        if: inputs.extra_docker_image_artifact != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.extra_docker_image_artifact }}
+          path: /tmp/
+
+      # ====================================================================
+      # 3. 加载 Docker 镜像
+      # ====================================================================
+      - name: Load Docker images
+        run: |
+          gunzip -c /tmp/sdtp-image.tar.gz | docker load
+          if [[ -n "${{ inputs.extra_docker_image_file }}" ]]; then
+            gunzip -c "/tmp/${{ inputs.extra_docker_image_file }}" | docker load
+          fi
+
+      # ====================================================================
+      # 4. 启动后端数据库容器
+      # ====================================================================
+      - name: Start Backend Database (${{ inputs.backend_type }})
+        run: |
+          if [[ "${{ inputs.backend_type }}" == "postgres" ]]; then
+            docker run -d --name backend-db \
+              -e POSTGRES_USER=${{ inputs.backend_user }} \
+              -e POSTGRES_PASSWORD=${{ inputs.backend_password }} \
+              -e POSTGRES_DB=${{ inputs.backend_db }} \
+              -p ${{ inputs.backend_port }}:5432 \
+              postgres:15-alpine
+
+            echo "等待 PostgreSQL 就绪..."
+            for i in $(seq 1 30); do
+              if docker exec backend-db pg_isready -U ${{ inputs.backend_user }} -d ${{ inputs.backend_db }} > /dev/null 2>&1; then
+                echo "PostgreSQL 就绪 (尝试 $i)"
+                break
+              fi
+              sleep 2
+            done
+          elif [[ "${{ inputs.backend_type }}" == "mysql" ]]; then
+            docker run -d --name backend-db \
+              -e MYSQL_ROOT_PASSWORD=${{ inputs.backend_password }} \
+              -e MYSQL_DATABASE=${{ inputs.backend_db }} \
+              -p ${{ inputs.backend_port }}:3306 \
+              mysql:8.0
+
+            echo "等待 MySQL 就绪..."
+            for i in $(seq 1 30); do
+              if docker exec backend-db mysqladmin ping -h 127.0.0.1 -u root -p${{ inputs.backend_password }} > /dev/null 2>&1; then
+                echo "MySQL 就绪 (尝试 $i)"
+                break
+              fi
+              sleep 2
+            done
+
+            docker exec backend-db mysql -u root -p${{ inputs.backend_password }} \
+              -e "CREATE DATABASE IF NOT EXISTS tpch; CREATE DATABASE IF NOT EXISTS tpcc;"
+          fi
+
+      # ====================================================================
+      # 5. Python 环境与初始化测试数据（必须在 SDTP 启动前完成，确保 schema 已存在）
+      # ====================================================================
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install DB drivers for data-gen
+        run: pip install psycopg2-binary mysql-connector-python
+
+      - name: Create tables and load data (PostgreSQL backend)
+        if: inputs.backend_type == 'postgres'
+        run: |
+          PGPASSWORD=${{ inputs.backend_password }} psql -h localhost -p ${{ inputs.backend_port }} -U ${{ inputs.backend_user }} -d ${{ inputs.backend_db }} -f benchmark/mysql-pg/tpch/schema_pg.sql
+          python benchmark/mysql-pg/tpch/data_gen.py \
+            --pg-host localhost --pg-port ${{ inputs.backend_port }} \
+            --pg-user ${{ inputs.backend_user }} --pg-password ${{ inputs.backend_password }} \
+            --pg-db ${{ inputs.backend_db }} --scale 0.01 --schema tpch
+
+          PGPASSWORD=${{ inputs.backend_password }} psql -h localhost -p ${{ inputs.backend_port }} -U ${{ inputs.backend_user }} -d ${{ inputs.backend_db }} -f benchmark/mysql-pg/tpcc/schema_pg.sql
+          python benchmark/mysql-pg/tpcc/data_gen.py \
+            --pg-host localhost --pg-port ${{ inputs.backend_port }} \
+            --pg-user ${{ inputs.backend_user }} --pg-password ${{ inputs.backend_password }} \
+            --pg-db ${{ inputs.backend_db }} --warehouses 1 --schema tpcc
+
+      - name: Create tables and load data (MySQL backend)
+        if: inputs.backend_type == 'mysql'
+        run: |
+          docker exec -i backend-db mysql -u ${{ inputs.backend_user }} -p${{ inputs.backend_password }} ${{ inputs.backend_db }} < benchmark/pg-mysql/tpch/schema_mysql.sql
+          python benchmark/pg-mysql/tpch/data_gen.py \
+            --db-type mysql \
+            --mysql-host 127.0.0.1 --mysql-port ${{ inputs.backend_port }} \
+            --mysql-user ${{ inputs.backend_user }} --mysql-password ${{ inputs.backend_password }} \
+            --mysql-db ${{ inputs.backend_db }} --scale 0.01 --schema tpch
+
+          docker exec -i backend-db mysql -u ${{ inputs.backend_user }} -p${{ inputs.backend_password }} ${{ inputs.backend_db }} < benchmark/pg-mysql/tpcc/schema_mysql.sql
+          python benchmark/pg-mysql/tpcc/data_gen.py \
+            --db-type mysql \
+            --mysql-host 127.0.0.1 --mysql-port ${{ inputs.backend_port }} \
+            --mysql-user ${{ inputs.backend_user }} --mysql-password ${{ inputs.backend_password }} \
+            --mysql-db ${{ inputs.backend_db }} --warehouses 1 --schema tpcc
+
+      # ====================================================================
+      # 6. 创建 SDTP 配置并启动代理（schema 已初始化，HikariCP 可正常建连）
+      # ====================================================================
+      - name: Create SDTP config and start
+        run: |
+          BE_TYPE="${{ inputs.backend_type }}"
+          BE_PORT="${{ inputs.backend_port }}"
+          BE_DB="${{ inputs.backend_db }}"
+          BE_USER="${{ inputs.backend_user }}"
+          BE_PASS="${{ inputs.backend_password }}"
+          BE_DIALECT="${{ inputs.backend_dialect }}"
+          SDTP_PORT="${{ inputs.sdtp_port }}"
+          SDTP_USER="${{ inputs.sdtp_user }}"
+          SDTP_PASS="${{ inputs.sdtp_password }}"
+          FRONTEND_PROTO="${{ inputs.frontend_protocol }}"
+
+          if [ "$BE_TYPE" = "postgres" ]; then
+            URL_TPCH="jdbc:postgresql://host.docker.internal:${BE_PORT}/${BE_DB}?currentSchema=tpch"
+            URL_TPCC="jdbc:postgresql://host.docker.internal:${BE_PORT}/${BE_DB}?currentSchema=tpcc"
+          else
+            URL_TPCH="jdbc:mysql://host.docker.internal:${BE_PORT}/tpch?allowMultiQueries=true"
+            URL_TPCC="jdbc:mysql://host.docker.internal:${BE_PORT}/tpcc?allowMultiQueries=true"
+          fi
+
+          {
+            echo "proxy:"
+            echo "  port: ${SDTP_PORT}"
+            echo "  frontend-protocol: ${FRONTEND_PROTO}"
+            echo "  auth:"
+            echo "    user: ${SDTP_USER}"
+            echo "    password: ${SDTP_PASS}"
+            echo "backends:"
+            echo "  - name: tpch"
+            echo "    dialect: ${BE_DIALECT}"
+            echo "    jdbc-url: ${URL_TPCH}"
+            echo "    username: ${BE_USER}"
+            echo "    password: ${BE_PASS}"
+            echo "    max-pool-size: 10"
+            echo "    min-idle: 2"
+            echo "  - name: tpcc"
+            echo "    dialect: ${BE_DIALECT}"
+            echo "    jdbc-url: ${URL_TPCC}"
+            echo "    username: ${BE_USER}"
+            echo "    password: ${BE_PASS}"
+            echo "    max-pool-size: 10"
+            echo "    min-idle: 2"
+            echo "translation:"
+            echo "  keyword-case: UPPER"
+            echo "  identifier-case: LOWER"
+          } > /tmp/sdtp-config.yml
+
+          docker run -d --name sdtp \
+            --add-host host.docker.internal:host-gateway \
+            -p ${SDTP_PORT}:${SDTP_PORT} \
+            -v /tmp/sdtp-config.yml:/opt/sdtp/config/proxy-config.yml \
+            sdtp:latest
+
+          echo "等待 SDTP 进程启动（日志探测）..."
+          for i in $(seq 1 30); do
+            if docker logs sdtp 2>&1 | grep -qi "started\|listening"; then
+              echo "SDTP 进程就绪 (尝试 $i)"
+              break
+            fi
+            sleep 2
+          done
+          docker logs sdtp --tail 30
+
+          # 根据前端协议 (FRONTEND_PROTO) 选择对应的测试连通性策略
+          if [ "$FRONTEND_PROTO" = "POSTGRESQL" ]; then
+            echo "等待 SDTP PostgreSQL 握手层就绪..."
+            PROBE_IMAGE="postgres:15-alpine"
+            for i in $(seq 1 40); do
+              if docker run --rm \
+                   --add-host host.docker.internal:host-gateway \
+                   "$PROBE_IMAGE" \
+                   pg_isready \
+                     -h host.docker.internal \
+                     -p ${SDTP_PORT} \
+                     -U ${SDTP_USER} \
+                     -d ${BE_DB} \
+                     -t 3 > /dev/null 2>&1; then
+                echo "  ✅ SDTP PostgreSQL handshake ready (attempt $i)"
+                break
+              fi
+              echo "  ⏳ 等待 SDTP PostgreSQL 握手就绪... (attempt $i/40)"
+              sleep 3
+            done
+          else
+            echo "等待 SDTP MySQL 握手层就绪..."
+            PROBE_IMAGE="mysql:8.0"
+            for i in $(seq 1 40); do
+              if docker run --rm \
+                   --add-host host.docker.internal:host-gateway \
+                   "$PROBE_IMAGE" \
+                   mysqladmin ping \
+                     -h host.docker.internal \
+                     -P ${SDTP_PORT} \
+                     -u ${SDTP_USER} \
+                     -p${SDTP_PASS} \
+                     --connect-timeout=3 > /dev/null 2>&1; then
+                echo "  ✅ SDTP MySQL handshake ready (attempt $i)"
+                break
+              fi
+              echo "  ⏳ 等待 SDTP MySQL 握手就绪... (attempt $i/40)"
+              sleep 3
+            done
+          fi
+
+      # ====================================================================
+      # 7. 执行集成测试
+      # ====================================================================
+      - name: Run integration test (${{ inputs.test_mode }})
+        run: |
+          bash benchmark/run-docker-test.sh \
+            --mode ${{ inputs.test_mode }} \
+            --host host.docker.internal \
+            --port ${{ inputs.sdtp_port }} \
+            --user ${{ inputs.sdtp_user }} \
+            --password ${{ inputs.sdtp_password }} \
+            --database ${{ inputs.backend_db }} \
+            --tpch-database tpch \
+            --tpcc-database tpcc \
+            --benchmark all \
+            --output-dir benchmark/reports
+
+      # ====================================================================
+      # 8. 收集日志 & 上传报告
+      # ====================================================================
+      - name: Collect SDTP logs & diagnostics
+        if: always()
+        run: |
+          mkdir -p /tmp/sdtp-logs
+          docker logs sdtp > /tmp/sdtp-logs/sdtp.log 2>&1 || true
+          docker logs backend-db > /tmp/sdtp-logs/backend-db.log 2>&1 || true
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.report_name }}
+          path: |
+            benchmark/reports/
+            /tmp/sdtp-logs/
+
+      # ====================================================================
+      # 9. 打印摘要
+      # ====================================================================
+      - name: Print summary
+        if: always()
+        run: |
+          {
+            echo "## ${{ inputs.summary_title }}"
+            echo ""
+            for report in benchmark/reports/report_*.txt; do
+              if [ -f "$report" ]; then
+                echo '```'
+                cat "$report"
+                echo '```'
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"

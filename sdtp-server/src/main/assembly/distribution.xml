@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.1"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.1
+                              http://maven.apache.org/xsd/assembly-2.1.1.xsd">
+
+    <!-- 生成 tar.gz 和 zip 两种格式 -->
+    <id>dist</id>
+    <formats>
+        <format>tar.gz</format>
+        <format>zip</format>
+        <format>dir</format>
+    </formats>
+
+    <!-- 不包含基础目录层级 -->
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>sdtp-server-${project.version}</baseDirectory>
+
+    <fileSets>
+        <!-- ==================== bin 脚本 ==================== -->
+        <fileSet>
+            <directory>src/main/assembly/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+            <fileMode>0755</fileMode>
+            <lineEnding>unix</lineEnding>
+            <filtered>true</filtered>
+            <includes>
+                <include>start.sh</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/assembly/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+            <fileMode>0644</fileMode>
+            <lineEnding>windows</lineEnding>
+            <filtered>true</filtered>
+            <includes>
+                <include>start.bat</include>
+            </includes>
+        </fileSet>
+
+        <!-- ==================== config ==================== -->
+        <fileSet>
+            <directory>src/main/assembly/config</directory>
+            <outputDirectory>config</outputDirectory>
+            <fileMode>0644</fileMode>
+            <filtered>false</filtered>
+        </fileSet>
+
+        <!-- ==================== logs（含 .gitkeep 确保目录创建） ==================== -->
+        <fileSet>
+            <directory>src/main/assembly/logs</directory>
+            <outputDirectory>logs</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
+
+        <!-- ==================== 依赖 jar（非 JDBC）→ lib/ ==================== -->
+        <fileSet>
+            <directory>${project.build.directory}/lib</directory>
+            <outputDirectory>lib</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
+
+        <!-- ==================== JDBC 驱动 → jdbc/ ==================== -->
+        <fileSet>
+            <directory>src/main/assembly/jdbc</directory>
+            <outputDirectory>jdbc</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
+    </fileSets>
+
+    <!-- ==================== 主 jar → lib/sdtp-server.jar ==================== -->
+    <files>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}.jar</source>
+            <outputDirectory>lib</outputDirectory>
+            <destName>sdtp-server.jar</destName>
+            <fileMode>0644</fileMode>
+        </file>
+    </files>
+
+</assembly>

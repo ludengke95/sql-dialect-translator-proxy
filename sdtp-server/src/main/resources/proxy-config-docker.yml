@@ -1,0 +1,68 @@
+# SDT Proxy — Docker Compose 环境配置
+proxy:
+  port: 7788
+  auth:
+    user: root
+    password: proxy_password
+
+backends:
+  - name: pg_db
+    dialect: POSTGRESQL
+    jdbc-url: jdbc:postgresql://postgres:5432/mydb
+    username: sdtpu
+    password: pg_password
+    max-pool-size: 5
+    min-idle: 1
+
+  - name: mysql_db
+    dialect: MYSQL
+    jdbc-url: jdbc:mysql://mysql:3306/mydb?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+    username: sdtpu
+    password: mysql_password
+    max-pool-size: 5
+    min-idle: 1
+
+  - name: oracle_db
+    dialect: ORACLE
+    jdbc-url: jdbc:oracle:thin:@oracle:1521/FREE
+    username: sdtpu
+    password: oracle_password
+    max-pool-size: 5
+    min-idle: 1
+
+  - name: sqlserver_db
+    dialect: SQLSERVER
+    jdbc-url: jdbc:sqlserver://sqlserver:1433;databaseName=master;encrypt=false
+    username: sa
+    password: Sqlserver_password123
+    max-pool-size: 5
+    min-idle: 1
+
+  - name: ivorysql_db
+    dialect: POSTGRESQL
+    jdbc-url: jdbc:postgresql://ivorysql:5432/mydb
+    username: sdtpu
+    password: pg_password
+    max-pool-size: 5
+    min-idle: 1
+
+  - name: dm_db
+    dialect: ORACLE
+    jdbc-url: jdbc:dm://dm8:5236
+    username: SYSDBA
+    password: SYSDBA001
+    max-pool-size: 5
+    min-idle: 1
+
+  - name: doris_db
+    dialect: MYSQL
+    jdbc-url: jdbc:mysql://doris:9030/demo?useUnicode=true&characterEncoding=utf8&useSSL=false
+    username: root
+    password: ""
+    max-pool-size: 5
+    min-idle: 1
+
+# SQL 翻译配置
+translation:
+  keyword-case: UPPER
+  identifier-case: LOWER
