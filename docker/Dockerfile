@@ -1,6 +1,6 @@
 # SDT Proxy Docker Image — 多阶段构建
 # Stage 1: 编译阶段（使用 Maven 3.9 + JDK 8 官方镜像）
-FROM maven:3.9-eclipse-temurin-8 AS builder
+FROM maven:3.9-eclipse-temurin-17 AS builder
 
 WORKDIR /workspace
 
