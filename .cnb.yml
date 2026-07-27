@@ -1,10 +1,11 @@
 main:
   push:
     - services:
-        - docker
+        - name: docker
+          options:
+            rootlessBuildkitd:
+              enabled: true
       stages:
         # 同名镜像构建&推送
-        - name: Docker build
-          script: docker build -t ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}:latest -f docker/Dockerfile .
-        - name: Docker push
-          script: docker push ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}:latest
+        - name: Docker buildx
+          script: docker buildx build -t ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}:latest --platform linux/amd64,linux/arm64 --push -f docker/Dockerfile .

@@ -26,6 +26,14 @@
             <url>https://maven.cnb.cool/dravenlu/dravenlu/-/packages/</url>
         </repository>
     </distributionManagement>
+    <repositories>
+        <repository>
+            <!-- 须与 settings.xml 中 server 的 id 一致 -->
+            <id>dravenlu-dravenlu</id>
+            <name>dravenlu-dravenlu</name>
+            <url>https://maven.cnb.cool/dravenlu/dravenlu/-/packages/</url>
+        </repository>
+    </repositories>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -122,48 +130,41 @@
         </pluginManagement>
         <plugins>
             <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <version>2.43.0</version>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
+                <version>2.23.0</version>
                 <configuration>
-                    <java>
-                        <palantirJavaFormat>
-                            <version>2.39.0</version>
-                        </palantirJavaFormat>
-                        <removeUnusedImports></removeUnusedImports>
-                        <importOrder>
-                            <order>java,javax,org,com,,#</order>
-                        </importOrder>
-                        <formatAnnotations></formatAnnotations>
-                        <trimTrailingWhitespace></trimTrailingWhitespace>
-                        <endWithNewline></endWithNewline>
-                    </java>
-                    <pom>
-                        <sortPom>
-                            <nrOfIndentSpace>4</nrOfIndentSpace>
-                            <keepBlankLines>false</keepBlankLines>
-                        </sortPom>
-                    </pom>
+                    <configFile>${maven.multiModuleProjectDirectory}/eclipse-formatter.xml</configFile>
+                    <lineEnding>LF</lineEnding>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>spotless-check</id>
+                        <id>format</id>
                         <goals>
-                            <goal>check</goal>
+                            <goal>format</goal>
                         </goals>
-                        <phase>verify</phase>
+                        <phase>process-sources</phase>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.7.3.5</version>
+                <groupId>net.revelc.code</groupId>
+                <artifactId>impsort-maven-plugin</artifactId>
+                <version>1.13.0</version>
                 <configuration>
-                    <effort>Max</effort>
-                    <threshold>Medium</threshold>
-                    <failOnError>false</failOnError>
+                    <groups>java.,javax.,org.,com.</groups>
+                    <staticGroups>*</staticGroups>
+                    <removeUnused>true</removeUnused>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>sort-imports</id>
+                        <goals>
+                            <goal>sort</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
