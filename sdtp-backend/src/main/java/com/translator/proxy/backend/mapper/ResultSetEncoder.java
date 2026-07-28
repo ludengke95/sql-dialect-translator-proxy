@@ -209,6 +209,7 @@ public final class ResultSetEncoder {
         BufferUtils.writeLengthEncodedString(buf, orgName != null ? orgName : name);
         buf.writeByte(0x0C);
         buf.writeShortLE(charset);
+        //todo 这个地方怎么回事
         buf.writeIntLE(Math.min(colLen, Integer.MAX_VALUE));
         buf.writeByte(mysqlType);
         buf.writeShortLE(0);

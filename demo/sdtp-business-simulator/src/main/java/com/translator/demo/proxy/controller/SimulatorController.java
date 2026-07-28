@@ -54,13 +54,13 @@ public class SimulatorController {
 
     // 审计结构实体
     public static class SqlAudit {
-        private String timestamp;
-        private String originalSql;
-        private String translatedSql;
-        private long durationMs;
-        private boolean success;
-        private String errorMessage;
-        private int rowsAffected;
+        private final String timestamp;
+        private final String originalSql;
+        private final String translatedSql;
+        private final long durationMs;
+        private final boolean success;
+        private final String errorMessage;
+        private final int rowsAffected;
 
         public SqlAudit(
                 String timestamp,

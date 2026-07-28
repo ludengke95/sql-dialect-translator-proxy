@@ -89,9 +89,7 @@ public class PgTypeMapper implements TypeMapper {
         case Types.LONGVARBINARY :
         case Types.BLOB :
             return PgOid.BYTEA;
-
         case Types.NULL :
-            return PgOid.TEXT;
 
         default :
             return PgOid.TEXT;

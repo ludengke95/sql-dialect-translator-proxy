@@ -43,10 +43,10 @@ public class PgCommandHandler extends ChannelInboundHandlerAdapter {
     private final PgSystemCatalogProvider systemCatalog;
 
     /** 已准备的语句缓存（statement name → sql） */
-    private final Map<String, String> preparedStatements = new ConcurrentHashMap<String, String>();
+    private final Map<String, String> preparedStatements = new ConcurrentHashMap<>();
 
     /** 已绑定的门户缓存（portal name → sql） */
-    private final Map<String, String> portals = new ConcurrentHashMap<String, String>();
+    private final Map<String, String> portals = new ConcurrentHashMap<>();
 
     /**
      * 构造命令分发器。

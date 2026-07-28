@@ -255,13 +255,13 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
             String likePattern = m.group(2);
             if (likePattern != null && !likePattern.isEmpty()) {
                 Pattern likeRegex = sqlLikeToRegex(likePattern);
-                List<String> filtered = new ArrayList<String>();
+                List<String> filtered = new ArrayList<>();
                 for (String name : names) {
                     if (likeRegex.matcher(name).matches()) {
                         filtered.add(name);
                     }
                 }
-                names = new LinkedHashSet<String>(filtered);
+                names = new LinkedHashSet<>(filtered);
             }
         }
 
@@ -270,7 +270,7 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void writeShowDatabasesResult(ChannelHandlerContext ctx, Set<String> names, int statusFlags) {
-        List<String> sorted = new ArrayList<String>(names);
+        List<String> sorted = new ArrayList<>(names);
 
         ByteBuf colCountBuf = ctx.alloc().buffer(2);
         BufferUtils.writeLengthEncodedInt(colCountBuf, 1);

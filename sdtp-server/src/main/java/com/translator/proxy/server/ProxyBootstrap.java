@@ -86,7 +86,6 @@ public class ProxyBootstrap {
         bossGroup = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup();
 
-        // todo 这个地方取最大值比较好，还是用累计求和比较好
         int bizThreads = 4;
         for (ProxyConfig.TargetConfig tcBackend : config.getBackends()) {
             bizThreads = Math.max(bizThreads, tcBackend.getMaxPoolSize());
@@ -100,7 +99,7 @@ public class ProxyBootstrap {
                 .withIdentifierCase(TranslationConfig.IdentifierCase.valueOf(trc.getIdentifierCase()));
 
         // 将 ProxyConfig.TargetConfig 转换为 BackendEntry 列表
-        List<BackendEntry> backends = new ArrayList<BackendEntry>();
+        List<BackendEntry> backends = new ArrayList<>();
         for (ProxyConfig.TargetConfig tc : config.getBackends()) {
             backends.add(ConfigWatcher.toBackendEntry(tc));
         }
@@ -144,7 +143,6 @@ public class ProxyBootstrap {
                         protected void initChannel(SocketChannel ch) {
                             ChannelPipeline pipeline = ch.pipeline();
 
-                            // todo 这个地方addLast，最后一个是最新执行的么，bizExecutorGroup为什么给handshakeHandler
                             pipeline.addLast("nettyMetrics", new NettyMetricsHandler());
                             pipeline.addLast("decoder", frontendProtocol.newDecoder(config.getMaxAllowedPacket()));
                             pipeline.addLast("encoder", frontendProtocol.newEncoder());
@@ -235,7 +233,6 @@ public class ProxyBootstrap {
     }
 
     /**
-     * todo 只有一个实现，还需要抽象么？这个地方为什么要抽象出AuthConfig？ AuthConfig 适配器 —— 从 ProxyConfig 获取认证信息， 实现
      * {@link com.translator.proxy.protocol.frontend.AuthConfig} 接口。
      */
     private static class ProxyAuthConfig implements AuthConfig {

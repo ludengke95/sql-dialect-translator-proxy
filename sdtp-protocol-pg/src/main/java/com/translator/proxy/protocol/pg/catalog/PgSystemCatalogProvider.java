@@ -187,7 +187,7 @@ public class PgSystemCatalogProvider implements SystemCatalogProvider {
 
     @Override
     public Map<String, String> getVariables() {
-        Map<String, String> vars = new HashMap<String, String>();
+        Map<String, String> vars = new HashMap<>();
         vars.put("server_version", "14.8");
         vars.put("server_encoding", "UTF8");
         vars.put("client_encoding", "UTF8");

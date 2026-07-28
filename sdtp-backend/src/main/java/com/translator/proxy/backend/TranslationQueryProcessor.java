@@ -296,15 +296,8 @@ public class TranslationQueryProcessor implements QueryProcessor {
         if (sql == null || sql.trim().isEmpty()) {
             return sql;
         }
-
-        try {
-            SqlTranslator translator = new SqlTranslator(this.sourceDialect, targetDialect, translationConfig);
-            return translator.translate(sql);
-        }
-        catch (SqlTranslationException e) {
-            // 翻译失败，记录日志并降级
-            throw e;
-        }
+        SqlTranslator translator = new SqlTranslator(this.sourceDialect, targetDialect, translationConfig);
+        return translator.translate(sql);
     }
 
     private String formatSqlForLog(String sql) {

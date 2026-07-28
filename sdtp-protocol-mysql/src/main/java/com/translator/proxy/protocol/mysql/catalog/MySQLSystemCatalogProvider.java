@@ -144,7 +144,6 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
         InterceptResult ir = intercept(sql, database);
         if (ir != null) {
             writeInterceptedResult(ctx, ir, session);
-            return;
         }
         // 兜底：无匹配拦截，不写入任何响应。
     }
@@ -363,6 +362,7 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
 
     private void writeMultiColumnResult(ChannelHandlerContext ctx, InterceptResult ir, FrontendSession session) {
         List<ColumnInfo> columns = ir.columns;
+        //todo 方法调用 'size' 可能产生 'NullPointerException'
         int colCount = columns.size();
         int statusFlags = MySQLAuthHandler.getStatusFlags(session);
 

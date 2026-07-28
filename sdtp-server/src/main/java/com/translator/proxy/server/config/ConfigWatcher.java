@@ -243,6 +243,7 @@ public class ConfigWatcher implements Runnable {
             for (String name : newBackends.keySet()) {
                 if (oldBackends.containsKey(name)) {
                     if (!oldBackends.get(name).equals(newBackends.get(name))) {
+                        //todo 这个地方怎么回事 totalChanges和1比大小
                         ReloadMetrics.observeDuration(name, "reload", seconds / Math.max(totalChanges, 1));
                     }
                 }
@@ -256,12 +257,11 @@ public class ConfigWatcher implements Runnable {
             for (String name : removed) {
                 ReloadMetrics.observeDuration(name, "remove", seconds);
             }
-            currentConfig = newConfig;
         }
         else {
             log.info("Config reload: no backend changes detected");
-            currentConfig = newConfig;
         }
+        currentConfig = newConfig;
     }
 
     /**

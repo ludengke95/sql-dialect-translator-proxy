@@ -23,6 +23,8 @@ public final class TypeMapper {
         switch (jdbcType) {
         case Types.TINYINT :
         case Types.BIT :
+
+        case Types.BOOLEAN :
             return ColumnType.FIELD_TYPE_TINY;
 
         case Types.SMALLINT :
@@ -76,9 +78,6 @@ public final class TypeMapper {
         case Types.CLOB :
             return ColumnType.FIELD_TYPE_MEDIUM_BLOB;
 
-        case Types.BOOLEAN :
-            return ColumnType.FIELD_TYPE_TINY;
-
         case Types.NULL :
             return ColumnType.FIELD_TYPE_NULL;
 
@@ -102,6 +101,8 @@ public final class TypeMapper {
         case Types.INTEGER :
             return 4;
         case Types.BIGINT :
+        case Types.TIME :
+        case Types.TIME_WITH_TIMEZONE :
             return 8;
         case Types.REAL :
         case Types.FLOAT :
@@ -113,9 +114,6 @@ public final class TypeMapper {
             return 65;
         case Types.DATE :
             return 10;
-        case Types.TIME :
-        case Types.TIME_WITH_TIMEZONE :
-            return 8;
         case Types.TIMESTAMP :
         case Types.TIMESTAMP_WITH_TIMEZONE :
             return 19;

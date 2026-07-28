@@ -34,7 +34,7 @@ public final class FrontendProtocols {
         if (protocols == null) {
             synchronized (FrontendProtocols.class) {
                 if (protocols == null) {
-                    List<FrontendProtocol> list = new ArrayList<FrontendProtocol>();
+                    List<FrontendProtocol> list = new ArrayList<>();
                     ServiceLoader<FrontendProtocol> loader = ServiceLoader.load(FrontendProtocol.class);
                     Iterator<FrontendProtocol> it = loader.iterator();
                     while (it.hasNext()) {
@@ -102,7 +102,7 @@ public final class FrontendProtocols {
      * 获取所有已加载协议的 ID 列表（用于错误消息）。
      */
     private static List<String> getAvailableIds() {
-        List<String> ids = new ArrayList<String>();
+        List<String> ids = new ArrayList<>();
         for (FrontendProtocol p : loadAll()) {
             ids.add(p.id());
         }

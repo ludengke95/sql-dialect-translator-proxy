@@ -59,7 +59,6 @@ public class PgHandshakeHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (!(msg instanceof PgRawMessage)) {
-            // todo fireChannelRead是做什么的
             ctx.fireChannelRead(msg);
             return;
         }
