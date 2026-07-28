@@ -59,12 +59,12 @@ target:
 
 ```bash
 # Linux / macOS
-./bin/start.sh start        # 后台启动
-./bin/start.sh start-fg     # 前台启动（Docker / systemd）
+./bin/sdtp.sh start        # 后台启动
+./bin/sdtp.sh start-fg     # 前台启动（Docker / systemd）
 
 # Windows
-bin\start.bat               # 前台启动
-bin\start.bat start          # 后台启动
+bin\sdtp.bat               # 前台启动
+bin\sdtp.bat start          # 后台启动
 ```
 
 ### 1.4 客户端连接
@@ -148,7 +148,7 @@ reload:
 
 ```bash
 export SDTP_CONFIG=/path/to/my-config.yml
-./bin/start.sh start
+./bin/sdtp.sh start
 ```
 
 ---
@@ -356,20 +356,20 @@ Watcher 监听的配置文件与启动时加载的**同一个文件**，查找�
 
 | 命令 | 说明 |
 |------|------|
-| `./bin/start.sh start` | 后台启动（nohup），PID 写入 `sdtp.pid` |
-| `./bin/start.sh start-fg` | 前台启动，日志输出到控制台 |
-| `./bin/start.sh stop` | 优雅停止（SIGTERM，30s 超时后 SIGKILL） |
-| `./bin/start.sh restart` | 重启 |
-| `./bin/start.sh status` | 查看运行状态 |
+| `./bin/sdtp.sh start` | 后台启动（nohup），PID 写入 `sdtp.pid` |
+| `./bin/sdtp.sh start-fg` | 前台启动，日志输出到控制台 |
+| `./bin/sdtp.sh stop` | 优雅停止（SIGTERM，30s 超时后 SIGKILL） |
+| `./bin/sdtp.sh restart` | 重启 |
+| `./bin/sdtp.sh status` | 查看运行状态 |
 
 ### Windows
 
 | 命令 | 说明 |
 |------|------|
-| `bin\start.bat` | 前台启动（双击即可） |
-| `bin\start.bat start` | 后台启动（javaw） |
-| `bin\start.bat stop` | 停止 |
-| `bin\start.bat status` | 查看状态 |
+| `bin\sdtp.bat` | 前台启动（双击即可） |
+| `bin\sdtp.bat start` | 后台启动（javaw） |
+| `bin\sdtp.bat stop` | 停止 |
+| `bin\sdtp.bat status` | 查看状态 |
 
 ### 环境变量
 
@@ -563,7 +563,7 @@ sdtp-server       ProxyBootstrap(Netty)、ConfigLoader(YAML)、分发包
 修改 jar 内 `logback.xml`，或启动时指定：
 
 ```bash
-JAVA_OPTS="-Dlog.level=DEBUG" ./bin/start.sh start
+JAVA_OPTS="-Dlog.level=DEBUG" ./bin/sdtp.sh start
 ```
 
 ### Q: 连接池多大合适？

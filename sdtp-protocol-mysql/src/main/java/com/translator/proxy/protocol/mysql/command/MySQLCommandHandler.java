@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.command;
 
 import java.io.IOException;
@@ -34,18 +35,19 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 /**
  * MySQL 命令处理器 —— 认证完成后处理客户端各类 MySQL 命令。
  *
- * <p>支持的命令：
+ * <p>
+ * 支持的命令：
  * <ul>
- *   <li>COM_QUERY (0x03) — SQL 查询，分发到系统变量拦截或后端执行</li>
- *   <li>COM_PING (0x0E) — 心跳</li>
- *   <li>COM_QUIT (0x01) — 断开连接</li>
- *   <li>COM_INIT_DB (0x02) — 切换数据库</li>
- *   <li>COM_FIELD_LIST (0x04) — 表字段列表（暂返回错误）</li>
+ * <li>COM_QUERY (0x03) — SQL 查询，分发到系统变量拦截或后端执行</li>
+ * <li>COM_PING (0x0E) — 心跳</li>
+ * <li>COM_QUIT (0x01) — 断开连接</li>
+ * <li>COM_INIT_DB (0x02) — 切换数据库</li>
+ * <li>COM_FIELD_LIST (0x04) — 表字段列表（暂返回错误）</li>
  * </ul>
  *
- * <p>此类将原 sdtp-core 中的 {@code CommandHandler} 逻辑完整迁移至 sdtp-protocol 模块。
- * OK/ERR/ColumnDef/TextRow/EOF 包构造委托给 {@link MySQLResponseWriter}，
- * 系统变量查询委托给 {@link MySQLSystemCatalogProvider}。
+ * <p>
+ * 此类将原 sdtp-core 中的 {@code CommandHandler} 逻辑完整迁移至 sdtp-protocol 模块。 OK/ERR/ColumnDef/TextRow/EOF 包构造委托给
+ * {@link MySQLResponseWriter}， 系统变量查询委托给 {@link MySQLSystemCatalogProvider}。
  */
 public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
 
@@ -58,8 +60,8 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
     private static final Pattern SET_AUTOCOMMIT_PATTERN = Pattern.compile(
             "^\\s*SET\\s+(?:@@(?:session\\.)?)?autocommit\\s*=\\s*(\\d)\\s*$", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern BEGIN_PATTERN =
-            Pattern.compile("^\\s*(?:BEGIN|START\\s+TRANSACTION)\\s*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern BEGIN_PATTERN = Pattern.compile("^\\s*(?:BEGIN|START\\s+TRANSACTION)\\s*$",
+            Pattern.CASE_INSENSITIVE);
     private static final Pattern COMMIT_PATTERN = Pattern.compile("^\\s*COMMIT\\s*$", Pattern.CASE_INSENSITIVE);
     private static final Pattern ROLLBACK_PATTERN = Pattern.compile("^\\s*ROLLBACK\\s*$", Pattern.CASE_INSENSITIVE);
 
@@ -75,7 +77,8 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
     /**
      * 构造命令处理器。
      *
-     * @param backendRouter 后端路由器，按会话 database 解析对应后端 QueryProcessor
+     * @param backendRouter
+     *            后端路由器，按会话 database 解析对应后端 QueryProcessor
      */
     public MySQLCommandHandler(BackendRouter backendRouter) {
         this.backendRouter = backendRouter;
@@ -95,33 +98,34 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
             log.debug("Command: {} (seq={})", cmdName, raw.getSequenceId());
             CommandMetrics.recordCommand(cmdName);
 
-            FrontendSession session =
-                    ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
+            FrontendSession session = ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
             switch (command) {
-                case CommandType.COM_QUERY:
-                    handleQuery(ctx, payload, session);
-                    break;
-                case CommandType.COM_PING:
-                    handlePing(ctx);
-                    break;
-                case CommandType.COM_QUIT:
-                    handleQuit(ctx);
-                    break;
-                case CommandType.COM_INIT_DB:
-                    handleInitDb(ctx, payload, session);
-                    break;
-                case CommandType.COM_FIELD_LIST:
-                    handleFieldList(ctx, payload);
-                    break;
-                default:
-                    handleUnsupported(ctx, CommandType.nameOf(command));
-                    break;
+            case CommandType.COM_QUERY :
+                handleQuery(ctx, payload, session);
+                break;
+            case CommandType.COM_PING :
+                handlePing(ctx);
+                break;
+            case CommandType.COM_QUIT :
+                handleQuit(ctx);
+                break;
+            case CommandType.COM_INIT_DB :
+                handleInitDb(ctx, payload, session);
+                break;
+            case CommandType.COM_FIELD_LIST :
+                handleFieldList(ctx, payload);
+                break;
+            default :
+                handleUnsupported(ctx, CommandType.nameOf(command));
+                break;
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Error handling command", e);
             CommandMetrics.recordError();
             responseWriter.writeErr((byte) 1, ctx, 1105, "HY000", "Internal error: " + e.getMessage());
-        } finally {
+        }
+        finally {
             raw.release();
         }
     }
@@ -166,7 +170,8 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
                 }
                 int statusFlags = MySQLAuthHandler.getStatusFlags(session);
                 responseWriter.writeOk((byte) 1, ctx, 0, 0, statusFlags, 0, "");
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.error("Failed to set autocommit", e);
                 responseWriter.writeErr((byte) 1, ctx, 1105, "HY000", "Failed to set autocommit: " + e.getMessage());
             }
@@ -187,7 +192,8 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
                 processor.commit(ctx, session);
                 int statusFlags = MySQLAuthHandler.getStatusFlags(session);
                 responseWriter.writeOk((byte) 1, ctx, 0, 0, statusFlags, 0, "");
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.error("Commit failed", e);
                 responseWriter.writeErr((byte) 1, ctx, 1105, "HY000", "Commit failed: " + e.getMessage());
             }
@@ -201,7 +207,8 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
                 processor.rollback(ctx, session);
                 int statusFlags = MySQLAuthHandler.getStatusFlags(session);
                 responseWriter.writeOk((byte) 1, ctx, 0, 0, statusFlags, 0, "");
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.error("Rollback failed", e);
                 responseWriter.writeErr((byte) 1, ctx, 1105, "HY000", "Rollback failed: " + e.getMessage());
             }
@@ -277,7 +284,7 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
         ctx.write(new MySQLPacketEncoder.OutgoingPacket(MySQLResponseWriter.buildEof(ctx.alloc(), statusFlags), seq++));
 
         for (String name : sorted) {
-            ByteBuf row = MySQLResponseWriter.buildTextRow(ctx.alloc(), new String[] {name});
+            ByteBuf row = MySQLResponseWriter.buildTextRow(ctx.alloc(), new String[]{name});
             ctx.write(new MySQLPacketEncoder.OutgoingPacket(row, seq++));
         }
 
@@ -291,12 +298,15 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
             char c = likePattern.charAt(i);
             if (c == '%') {
                 sb.append(".*");
-            } else if (c == '_') {
+            }
+            else if (c == '_') {
                 sb.append('.');
-            } else if (c == '\\' && i + 1 < likePattern.length()) {
+            }
+            else if (c == '\\' && i + 1 < likePattern.length()) {
                 sb.append(Pattern.quote(String.valueOf(likePattern.charAt(i + 1))));
                 i++;
-            } else {
+            }
+            else {
                 sb.append(Pattern.quote(String.valueOf(c)));
             }
         }
@@ -308,8 +318,7 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
 
     private void handlePing(ChannelHandlerContext ctx) {
         int statusFlags = 0;
-        FrontendSession session =
-                ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
+        FrontendSession session = ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
         if (session != null) {
             statusFlags = MySQLAuthHandler.getStatusFlags(session);
         }
@@ -341,7 +350,8 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
             try {
                 com.translator.proxy.core.handler.QueryProcessor processor = resolveProcessor(session);
                 processor.rollback(ctx, session);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.error("Failed to implicitly rollback transaction during database switch", e);
             }
         }
@@ -364,7 +374,8 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
                     "Client {} disconnected: {}",
                     ctx.channel().remoteAddress(),
                     cause.getMessage() != null ? cause.getMessage() : "connection reset");
-        } else {
+        }
+        else {
             log.error("Exception in MySQLCommandHandler", cause);
         }
         ctx.close();
@@ -372,13 +383,13 @@ public class MySQLCommandHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        FrontendSession session =
-                ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
+        FrontendSession session = ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
         if (session != null) {
             try {
                 com.translator.proxy.core.handler.QueryProcessor processor = resolveProcessor(session);
                 processor.closeSessionConnection(ctx, session);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.error("Error closing session bound connection in channelInactive", e);
             }
         }

@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.auth;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,15 +25,17 @@ import io.netty.util.concurrent.EventExecutorGroup;
 /**
  * MySQL 握手处理器 —— MySQL 连接建立后的第一个 Handler。
  *
- * <p>流程：
+ * <p>
+ * 流程：
  * <ol>
- *   <li>生成 20 字节 scramble（认证挑战码）</li>
- *   <li>创建 FrontendSession 并绑定到 channel</li>
- *   <li>构造 HandshakeV10 包发送给客户端</li>
- *   <li>将自己从 pipeline 中移除，加入 MySQLAuthHandler</li>
+ * <li>生成 20 字节 scramble（认证挑战码）</li>
+ * <li>创建 FrontendSession 并绑定到 channel</li>
+ * <li>构造 HandshakeV10 包发送给客户端</li>
+ * <li>将自己从 pipeline 中移除，加入 MySQLAuthHandler</li>
  * </ol>
  *
- * <p>此类将原 sdtp-core 中的 {@code HandshakeHandler} 逻辑完整迁移至 sdtp-protocol 模块。
+ * <p>
+ * 此类将原 sdtp-core 中的 {@code HandshakeHandler} 逻辑完整迁移至 sdtp-protocol 模块。
  */
 public class MySQLHandshakeHandler extends ChannelInboundHandlerAdapter {
 
@@ -54,7 +57,8 @@ public class MySQLHandshakeHandler extends ChannelInboundHandlerAdapter {
     /**
      * 使用自定义账密和业务线程池。
      *
-     * @param backendRouter 后端路由器（由启动层经 SPI 注入）
+     * @param backendRouter
+     *            后端路由器（由启动层经 SPI 注入）
      */
     public MySQLHandshakeHandler(
             String authUser, String authPassword, EventExecutorGroup bizExecutorGroup, BackendRouter backendRouter) {

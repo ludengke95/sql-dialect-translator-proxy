@@ -80,3 +80,4 @@ __pycache__/
 
 /.workbuddy
 /tmp
+/**/.flattened-pom.xml

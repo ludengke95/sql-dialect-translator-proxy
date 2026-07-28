@@ -1,7 +1,7 @@
 # ============================================================================
 # SDTP 配置文件
 # ============================================================================
-# 修改此文件后重启 Proxy:  ./bin/start.sh restart   或   bin\start.bat stop && bin\start.bat start
+# 修改此文件后重启 Proxy:  ./bin/sdtp.sh restart   或   bin\sdtp.bat stop && bin\sdtp.bat start
 # 也可通过环境变量指定其他配置文件:  export PROXY_CONFIG=/path/to/other-config.yml
 # ============================================================================
 

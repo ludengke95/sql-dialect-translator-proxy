@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend;
 
 import java.util.regex.Matcher;
@@ -21,10 +22,12 @@ import io.netty.channel.ChannelHandlerContext;
 /**
  * SQL 翻译装饰器 —— 在执行前将源 SQL（MySQL 方言）翻译为目标方言 SQL。
  *
- * <p>包装一个 {@link QueryProcessor}，在执行前调用 Calcite 翻译引擎。
- * 翻译失败时自动降级为原始 SQL 直接执行。
+ * <p>
+ * 包装一个 {@link QueryProcessor}，在执行前调用 Calcite 翻译引擎。 翻译失败时自动降级为原始 SQL 直接执行。
  *
- * <p>跳过翻译（直通模式）：在 SQL 开头加注释标记即可绕过翻译引擎：
+ * <p>
+ * 跳过翻译（直通模式）：在 SQL 开头加注释标记即可绕过翻译引擎：
+ *
  * <pre>
  *   -- direct
  *   SELECT now(), version()
@@ -36,7 +39,9 @@ import io.netty.channel.ChannelHandlerContext;
  *   SELECT pg_backend_pid()
  * </pre>
  *
- * <p>架构位置：
+ * <p>
+ * 架构位置：
+ *
  * <pre>
  *   CommandHandler → TranslationQueryProcessor → JdbcBackendQueryProcessor → 目标数据库
  *                    (翻译 SQL / 直通)           (执行 SQL)
@@ -47,8 +52,8 @@ public class TranslationQueryProcessor implements QueryProcessor {
     private static final Logger log = LoggerFactory.getLogger(TranslationQueryProcessor.class);
 
     /** 直通标记：-- direct 或 -- sdtp:direct */
-    private static final Pattern DIRECT_LINE_HINT =
-            Pattern.compile("^\\s*--\\s*(?:sdtp:)?direct\\s*\\n?(.*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern DIRECT_LINE_HINT = Pattern.compile("^\\s*--\\s*(?:sdtp:)?direct\\s*\\n?(.*)",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
     /** 直通标记：/* sdtp:direct *{@literal /} */
     private static final Pattern DIRECT_BLOCK_HINT = Pattern.compile(
@@ -75,8 +80,10 @@ public class TranslationQueryProcessor implements QueryProcessor {
     /**
      * 创建翻译处理器。
      *
-     * @param delegate        实际后端查询处理器
-     * @param targetDialectId 目标方言标识符（如 "postgresql"）
+     * @param delegate
+     *            实际后端查询处理器
+     * @param targetDialectId
+     *            目标方言标识符（如 "postgresql"）
      */
     public TranslationQueryProcessor(QueryProcessor delegate, String targetDialectId) {
         this(delegate, targetDialectId, TranslationConfig.DEFAULT, null);
@@ -93,10 +100,14 @@ public class TranslationQueryProcessor implements QueryProcessor {
     /**
      * 创建翻译处理器（带自定义大小写配置）。
      *
-     * @param delegate          实际后端查询处理器
-     * @param targetDialectId   目标方言标识符
-     * @param translationConfig 翻译配置（关键词/标识符大小写策略）
-     * @param backendName       后端名称（用于指标打点），可为 null
+     * @param delegate
+     *            实际后端查询处理器
+     * @param targetDialectId
+     *            目标方言标识符
+     * @param translationConfig
+     *            翻译配置（关键词/标识符大小写策略）
+     * @param backendName
+     *            后端名称（用于指标打点），可为 null
      */
     public TranslationQueryProcessor(
             QueryProcessor delegate, String targetDialectId, TranslationConfig translationConfig, String backendName) {
@@ -106,11 +117,16 @@ public class TranslationQueryProcessor implements QueryProcessor {
     /**
      * 创建翻译处理器（指定源方言与目标方言）。
      *
-     * @param delegate          实际后端查询处理器
-     * @param sourceDialect     源方言类型
-     * @param targetDialect     目标方言类型
-     * @param translationConfig 翻译配置（关键词/标识符大小写策略）
-     * @param backendName       后端名称（用于指标打点），可为 null
+     * @param delegate
+     *            实际后端查询处理器
+     * @param sourceDialect
+     *            源方言类型
+     * @param targetDialect
+     *            目标方言类型
+     * @param translationConfig
+     *            翻译配置（关键词/标识符大小写策略）
+     * @param backendName
+     *            后端名称（用于指标打点），可为 null
      */
     public TranslationQueryProcessor(
             QueryProcessor delegate,
@@ -134,7 +150,8 @@ public class TranslationQueryProcessor implements QueryProcessor {
                     this.targetDialect.getIdentifier(),
                     this.translationConfig,
                     this.backendName);
-        } else {
+        }
+        else {
             log.info(
                     "SQL translation disabled (source == target: {}, backend: {})",
                     this.targetDialect.getIdentifier(),
@@ -186,7 +203,8 @@ public class TranslationQueryProcessor implements QueryProcessor {
             TranslationMetrics.recordSuccess();
             TranslationMetrics.recordDuration(targetDialect.getIdentifier(), backendName, seconds);
             log.info("Translated: {} → {}", formatSqlForLog(sql), formatSqlForLog(translatedSql));
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.warn(
                     "Translation failed for SQL: {}. Falling back to original. Error: {}",
                     formatSqlForLog(sql),
@@ -206,7 +224,8 @@ public class TranslationQueryProcessor implements QueryProcessor {
      * @return 剥离后的 SQL（如果检测到直通标记），否则返回 null
      */
     static String stripDirectHint(String sql) {
-        if (sql == null) return null;
+        if (sql == null)
+            return null;
 
         Matcher m = DIRECT_LINE_HINT.matcher(sql);
         if (m.matches()) {
@@ -233,7 +252,8 @@ public class TranslationQueryProcessor implements QueryProcessor {
     /**
      * 设置源方言类型（默认为 MYSQL）。
      *
-     * @param sourceDialect 源方言类型
+     * @param sourceDialect
+     *            源方言类型
      */
     public void setSourceDialect(DialectType sourceDialect) {
         if (sourceDialect != null) {
@@ -280,7 +300,8 @@ public class TranslationQueryProcessor implements QueryProcessor {
         try {
             SqlTranslator translator = new SqlTranslator(this.sourceDialect, targetDialect, translationConfig);
             return translator.translate(sql);
-        } catch (SqlTranslationException e) {
+        }
+        catch (SqlTranslationException e) {
             // 翻译失败，记录日志并降级
             throw e;
         }

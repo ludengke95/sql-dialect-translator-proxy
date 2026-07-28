@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.auth;
 
 import java.nio.charset.StandardCharsets;
@@ -24,14 +25,16 @@ import io.netty.util.concurrent.EventExecutorGroup;
 /**
  * MySQL 认证处理器 —— 处理客户端发来的 HandshakeResponse41 和 AuthSwitchResponse。
  *
- * <p>流程：
+ * <p>
+ * 流程：
  * <ol>
- *   <li>服务端声明 mysql_native_password（HandshakeV10）</li>
- *   <li>客户端请求 mysql_native_password → 直接 SHA-1 验证 → OK</li>
- *   <li>客户端请求 caching_sha2_password → AuthSwitch 到 mysql_native_password → 验证 → OK</li>
+ * <li>服务端声明 mysql_native_password（HandshakeV10）</li>
+ * <li>客户端请求 mysql_native_password → 直接 SHA-1 验证 → OK</li>
+ * <li>客户端请求 caching_sha2_password → AuthSwitch 到 mysql_native_password → 验证 → OK</li>
  * </ol>
  *
- * <p>此类将原 sdtp-core 中的 {@code AuthHandler} 逻辑完整迁移至 sdtp-protocol 模块。
+ * <p>
+ * 此类将原 sdtp-core 中的 {@code AuthHandler} 逻辑完整迁移至 sdtp-protocol 模块。
  */
 public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
 
@@ -77,8 +80,7 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
         ByteBuf payload = raw.getPayload();
 
         try {
-            FrontendSession session =
-                    ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
+            FrontendSession session = ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
             if (session == null) {
                 log.error("No session found for channel {}", ctx.channel());
                 writeErrorAndClose(ctx, 1045, "HY000", "Internal error: no session", (byte) 2);
@@ -87,10 +89,12 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
 
             if (expectingAuthSwitchResponse) {
                 handleAuthSwitchResponse(ctx, session, payload);
-            } else {
+            }
+            else {
                 handleHandshakeResponse(ctx, session, payload);
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Error processing auth", e);
             writeErrorAndClose(
                     ctx,
@@ -98,7 +102,8 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
                     "HY000",
                     "Unknown error during authentication",
                     expectingAuthSwitchResponse ? (byte) 4 : (byte) 2);
-        } finally {
+        }
+        finally {
             raw.release();
         }
     }
@@ -141,7 +146,8 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
                     return;
                 }
                 log.info("SHA-256 fast auth failed, falling back to AuthSwitch");
-            } else {
+            }
+            else {
                 log.info("Client sent empty auth_response for caching_sha2_password, starting AuthSwitch");
             }
 
@@ -150,7 +156,8 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
             writeAuthSwitchRequest(ctx, authSwitchScramble, "mysql_native_password");
             expectingAuthSwitchResponse = true;
 
-        } else if ("mysql_native_password".equals(plugin) || plugin == null) {
+        }
+        else if ("mysql_native_password".equals(plugin) || plugin == null) {
             if (!MySQLAuth.verify(expectedPassword, session.getScramble(), resp.authResponse)) {
                 log.warn("Auth failed (native): wrong password for user '{}'", resp.username);
                 ConnectionMetrics.onAuthFailure("wrong_password");
@@ -174,7 +181,8 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
             responseWriter.writeOk((byte) 2, ctx, 0, 0, getStatusFlags(session), 0, "");
             switchToCommandHandler(ctx);
 
-        } else {
+        }
+        else {
             log.warn("Auth failed: unsupported plugin '{}' from user '{}'", plugin, resp.username);
             ConnectionMetrics.onAuthFailure("unsupported_plugin");
             writeErrorAndClose(
@@ -205,8 +213,8 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
                     "Expected: {}", MySQLAuth.bytesToHex(MySQLAuth.scramble411(expectedPassword, authSwitchScramble)));
             log.debug("Client:   {}", MySQLAuth.bytesToHex(clientToken));
             writeErrorAndClose(
-                    ctx, 1045, "28000", "Access denied for user '" + expectedUser + "' (using password: YES)", (byte)
-                            4);
+                    ctx, 1045, "28000", "Access denied for user '" + expectedUser + "' (using password: YES)",
+                    (byte) 4);
             return;
         }
 
@@ -226,7 +234,8 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
                     .addAfter(
                             bizExecutorGroup, "authHandler", "commandHandler", new MySQLCommandHandler(backendRouter));
             ctx.pipeline().remove(this);
-        } else {
+        }
+        else {
             ctx.pipeline().replace(this, "commandHandler", new MySQLCommandHandler(backendRouter));
         }
     }
@@ -255,8 +264,8 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
         payload.skipBytes(23);
         resp.username = BufferUtils.readNullTerminatedString(payload);
 
-        boolean usePluginAuthLenenc =
-                (resp.capabilityFlags & CapabilityFlags.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA) != 0;
+        boolean usePluginAuthLenenc = (resp.capabilityFlags
+                & CapabilityFlags.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA) != 0;
         boolean useSecureConnection = (resp.capabilityFlags & CapabilityFlags.CLIENT_SECURE_CONNECTION) != 0;
 
         if (usePluginAuthLenenc) {
@@ -266,11 +275,13 @@ public class MySQLAuthHandler extends ChannelInboundHandlerAdapter {
             }
             resp.authResponse = new byte[(int) len];
             payload.readBytes(resp.authResponse);
-        } else if (useSecureConnection) {
+        }
+        else if (useSecureConnection) {
             int len = payload.readUnsignedByte();
             resp.authResponse = new byte[len];
             payload.readBytes(resp.authResponse);
-        } else {
+        }
+        else {
             resp.authResponse = BufferUtils.readNullTerminatedString(payload).getBytes(StandardCharsets.UTF_8);
         }
 

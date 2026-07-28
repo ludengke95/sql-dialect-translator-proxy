@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.catalog;
 
 import java.nio.charset.StandardCharsets;
@@ -23,7 +24,8 @@ import io.netty.channel.ChannelHandlerContext;
 /**
  * PostgreSQL 系统目录提供者 —— 模拟 pg_catalog 相关查询。
  *
- * <p>提供 PG 版本、字符集等系统变量，拦截常见的系统查询。
+ * <p>
+ * 提供 PG 版本、字符集等系统变量，拦截常见的系统查询。
  */
 public class PgSystemCatalogProvider implements SystemCatalogProvider {
 
@@ -32,8 +34,8 @@ public class PgSystemCatalogProvider implements SystemCatalogProvider {
     /** 后端路由器（用于 pg_database 枚举返回后端名） */
     private final BackendRouter backendRouter;
 
-    private static final Pattern PG_DATABASE =
-            Pattern.compile("^\\s*SELECT\\s+.*\\bFROM\\s+PG_DATABASE\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PG_DATABASE = Pattern.compile("^\\s*SELECT\\s+.*\\bFROM\\s+PG_DATABASE\\b",
+            Pattern.CASE_INSENSITIVE);
 
     private final PgResponseWriter responseWriter = new PgResponseWriter();
 
@@ -100,7 +102,8 @@ public class PgSystemCatalogProvider implements SystemCatalogProvider {
         if (upper.startsWith("SHOW ")) {
             String varName = upper.substring(5).trim();
             String value = getVariables().get(varName.toLowerCase());
-            if (value == null) value = "";
+            if (value == null)
+                value = "";
             sendSingleValueResult(ctx, varName.toLowerCase(), value);
             return;
         }

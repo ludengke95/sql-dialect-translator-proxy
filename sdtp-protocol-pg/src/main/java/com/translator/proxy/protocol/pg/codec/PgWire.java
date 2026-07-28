@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.codec;
 
 import java.nio.charset.StandardCharsets;
@@ -7,12 +8,13 @@ import io.netty.buffer.ByteBuf;
 /**
  * PostgreSQL 线协议常量与辅助方法。
  *
- * <p>定义 PG 协议消息类型码、认证类型、SSL 码等常量，
- * 以及包构造所需的基础辅助方法（cstr、int32、int16）。
+ * <p>
+ * 定义 PG 协议消息类型码、认证类型、SSL 码等常量， 以及包构造所需的基础辅助方法（cstr、int32、int16）。
  */
 public final class PgWire {
 
-    private PgWire() {}
+    private PgWire() {
+    }
 
     // ==================== 消息类型码 ====================
 
@@ -144,7 +146,8 @@ public final class PgWire {
     /**
      * 构建完整的 PG 消息帧（类型码 + 长度 + payload）。
      *
-     * <p>长度字段 = 4 (自身) + payload 可读字节数。
+     * <p>
+     * 长度字段 = 4 (自身) + payload 可读字节数。
      */
     public static ByteBuf buildMessage(byte type, ByteBuf payload) {
         int payloadLen = payload.readableBytes();

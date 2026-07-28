@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.result;
 
 import java.nio.charset.StandardCharsets;
@@ -17,9 +18,9 @@ import io.netty.channel.ChannelHandlerContext;
 /**
  * MySQL 响应写入器 —— 将内部执行结果按 MySQL 线协议格式编码并写入 Netty Channel。
  *
- * <p>实现 {@link com.translator.proxy.protocol.frontend.ResponseWriter} 接口，
- * 将原 {@code AuthHandler.buildOkPacket/buildErrPacket} 和 {@code CommandHandler}
- * 中的 ColumnDef/EOF/TextRow 构造逻辑集中至此。
+ * <p>
+ * 实现 {@link com.translator.proxy.protocol.frontend.ResponseWriter} 接口， 将原
+ * {@code AuthHandler.buildOkPacket/buildErrPacket} 和 {@code CommandHandler} 中的 ColumnDef/EOF/TextRow 构造逻辑集中至此。
  */
 public class MySQLResponseWriter implements ResponseWriter {
 
@@ -156,7 +157,8 @@ public class MySQLResponseWriter implements ResponseWriter {
         buf.writeByte('#');
         if (sqlState != null && sqlState.length() == 5) {
             buf.writeBytes(sqlState.getBytes(StandardCharsets.UTF_8));
-        } else {
+        }
+        else {
             buf.writeBytes("HY000".getBytes(StandardCharsets.UTF_8));
         }
         if (message != null) {
@@ -213,7 +215,8 @@ public class MySQLResponseWriter implements ResponseWriter {
         for (String val : values) {
             if (val == null) {
                 buf.writeByte(0xFB);
-            } else {
+            }
+            else {
                 BufferUtils.writeLengthEncodedString(buf, val);
             }
         }
@@ -267,7 +270,8 @@ public class MySQLResponseWriter implements ResponseWriter {
             String value = rs.getString(i);
             if (rs.wasNull() || value == null) {
                 buf.writeByte(0xFB);
-            } else {
+            }
+            else {
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 BufferUtils.writeLengthEncodedInt(buf, bytes.length);
                 buf.writeBytes(bytes);

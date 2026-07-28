@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend;
 
 import java.util.List;
@@ -18,12 +19,12 @@ import com.translator.proxy.metrics.ReloadMetrics;
 /**
  * 多后端连接池管理器。
  *
- * <p>根据配置的 backends 列表初始化多个 HikariCP 连接池，
- * 每个后端有一个 {@link ReloadableQueryProcessor}（内含翻译装饰器）。
- * 实现 {@link BackendRouter} 接口，按会话中记录的 database 名称路由。
+ * <p>
+ * 根据配置的 backends 列表初始化多个 HikariCP 连接池， 每个后端有一个 {@link ReloadableQueryProcessor}（内含翻译装饰器）。 实现 {@link BackendRouter}
+ * 接口，按会话中记录的 database 名称路由。
  *
- * <p>支持动态增/删/改后端：{@link #addBackend(BackendEntry)}、
- * {@link #removeBackend(String)}、{@link #reloadBackend(BackendEntry)}。
+ * <p>
+ * 支持动态增/删/改后端：{@link #addBackend(BackendEntry)}、 {@link #removeBackend(String)}、{@link #reloadBackend(BackendEntry)}。
  */
 public class BackendPoolManager implements BackendRouter {
 
@@ -47,8 +48,10 @@ public class BackendPoolManager implements BackendRouter {
     /**
      * 创建管理器并初始化所有后端连接池（兼容旧接口，使用默认 reload 参数）。
      *
-     * @param backends                后端配置列表
-     * @param defaultTranslationConfig 全局默认翻译配置
+     * @param backends
+     *            后端配置列表
+     * @param defaultTranslationConfig
+     *            全局默认翻译配置
      */
     public BackendPoolManager(List<BackendEntry> backends, TranslationConfig defaultTranslationConfig) {
         this(backends, defaultTranslationConfig, 1000, 30000);
@@ -57,10 +60,14 @@ public class BackendPoolManager implements BackendRouter {
     /**
      * 创建管理器并初始化所有后端连接池。
      *
-     * @param backends                后端配置列表
-     * @param defaultTranslationConfig 全局默认翻译配置
-     * @param reloadQueueCapacity     reload 请求队列容量
-     * @param reloadDrainTimeoutMs    reload drain 超时（毫秒）
+     * @param backends
+     *            后端配置列表
+     * @param defaultTranslationConfig
+     *            全局默认翻译配置
+     * @param reloadQueueCapacity
+     *            reload 请求队列容量
+     * @param reloadDrainTimeoutMs
+     *            reload drain 超时（毫秒）
      */
     public BackendPoolManager(
             List<BackendEntry> backends,
@@ -93,7 +100,8 @@ public class BackendPoolManager implements BackendRouter {
         if (!processorMap.isEmpty()) {
             defaultProcessor = processorMap.values().iterator().next();
             log.info("Default backend: '{}'", processorMap.keySet().iterator().next());
-        } else {
+        }
+        else {
             log.warn("No backends configured, using NOOP processor");
             defaultProcessor = QueryProcessor.NOOP;
         }
@@ -133,7 +141,8 @@ public class BackendPoolManager implements BackendRouter {
     /**
      * 新增一个后端。
      *
-     * @param be 后端配置
+     * @param be
+     *            后端配置
      * @return true 表示新增成功；false 表示 name 已存在（不会覆盖）
      */
     public boolean addBackend(BackendEntry be) {
@@ -163,7 +172,8 @@ public class BackendPoolManager implements BackendRouter {
     /**
      * 删除一个后端。优雅 drain 后关闭连接池。
      *
-     * @param name 后端名称
+     * @param name
+     *            后端名称
      * @return true 表示删除成功；false 表示 name 不存在
      */
     public boolean removeBackend(String name) {
@@ -185,7 +195,8 @@ public class BackendPoolManager implements BackendRouter {
         while (rp.getQueueSize() > 0 && System.currentTimeMillis() < deadline) {
             try {
                 Thread.sleep(50);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
@@ -200,7 +211,8 @@ public class BackendPoolManager implements BackendRouter {
     /**
      * 热 reload 一个后端：drain 旧连接池 → 按新配置创建连接池 → 重新激活。
      *
-     * @param be 新的后端配置（name 必须与已有后端匹配）
+     * @param be
+     *            新的后端配置（name 必须与已有后端匹配）
      * @return true 表示 reload 成功；false 表示 name 不存在
      */
     public boolean reloadBackend(BackendEntry be) {
@@ -263,7 +275,8 @@ public class BackendPoolManager implements BackendRouter {
         // 如果后端 dialect 不是 MYSQL，按 MYSQL -> targetDialect 转换
         if (be.getDialect() != null && !be.getDialect().equalsIgnoreCase("MYSQL")) {
             return new TranslationQueryProcessor(jdbcProcessor, be.getDialect(), tc, be.getName());
-        } else {
+        }
+        else {
             // 前端是 POSTGRESQL 且后端是 MYSQL 时，开启 POSTGRESQL -> MYSQL 改写翻译
             return new TranslationQueryProcessor(
                     jdbcProcessor, DialectType.POSTGRESQL, DialectType.MYSQL, tc, be.getName());
@@ -305,7 +318,8 @@ public class BackendPoolManager implements BackendRouter {
             log.info(
                     "Default backend updated to: '{}'",
                     processorMap.keySet().iterator().next());
-        } else {
+        }
+        else {
             defaultProcessor = QueryProcessor.NOOP;
             log.warn("No backends remaining, default processor is NOOP");
         }

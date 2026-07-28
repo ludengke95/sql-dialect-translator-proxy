@@ -1,3 +1,4 @@
+
 package com.translator.proxy.core.session;
 
 import java.nio.charset.Charset;
@@ -7,10 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.netty.channel.Channel;
 
 /**
- * 前端连接的会话上下文。
- * 与 Netty Channel 一对一绑定，维护连接生命周期内的状态。
+ * 前端连接的会话上下文。 与 Netty Channel 一对一绑定，维护连接生命周期内的状态。
  *
- * <p>关键状态：sequenceId（严格递增）、当前 database、字符集、事务状态。
+ * <p>
+ * 关键状态：sequenceId（严格递增）、当前 database、字符集、事务状态。
  */
 public class FrontendSession {
 

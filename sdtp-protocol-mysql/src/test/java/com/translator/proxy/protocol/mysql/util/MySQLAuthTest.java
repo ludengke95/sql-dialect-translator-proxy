@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.util;
 
 import static org.junit.Assert.*;

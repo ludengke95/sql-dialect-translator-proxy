@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend;
 
 import static org.junit.Assert.*;
@@ -63,7 +64,8 @@ public class TranslationIntegrationTest {
         try {
             translator.translate("INVALID SQL !!! @@@");
             fail("应该抛异常");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             // 预期——翻译失败
             assertTrue(e.getMessage() != null);
         }

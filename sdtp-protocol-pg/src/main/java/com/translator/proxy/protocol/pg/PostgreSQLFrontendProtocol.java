@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg;
 
 import com.translator.proxy.core.handler.BackendRouter;
@@ -20,8 +21,8 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 /**
  * PostgreSQL 前端协议的 SPI 实现。
  *
- * <p>通过 Java {@link java.util.ServiceLoader} 注册，ID 为 "POSTGRESQL"。
- * 工厂方法创建所有 PG 协议相关的 Handler、编解码器、响应写入器等。
+ * <p>
+ * 通过 Java {@link java.util.ServiceLoader} 注册，ID 为 "POSTGRESQL"。 工厂方法创建所有 PG 协议相关的 Handler、编解码器、响应写入器等。
  */
 public class PostgreSQLFrontendProtocol implements FrontendProtocol {
 

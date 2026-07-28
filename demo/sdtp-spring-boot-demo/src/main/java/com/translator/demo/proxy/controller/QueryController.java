@@ -1,3 +1,4 @@
+
 package com.translator.demo.proxy.controller;
 
 import java.sql.Connection;
@@ -54,14 +55,16 @@ public class QueryController {
                         }
                         return ResponseEntity.ok(list);
                     }
-                } else {
+                }
+                else {
                     int updateCount = stmt.getUpdateCount();
                     Map<String, Object> result = new LinkedHashMap<>();
                     result.put("updateCount", updateCount);
                     return ResponseEntity.ok(result);
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
@@ -83,7 +86,8 @@ public class QueryController {
             result.put("databases", databases);
             result.put("currentDb", currentDb);
             return ResponseEntity.ok(result);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);

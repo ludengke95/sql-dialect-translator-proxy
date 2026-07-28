@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.draven.sql.translator</groupId>
         <artifactId>sdtp-demo</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>sdtp-business-simulator</artifactId>
     <name>SDT Proxy Business Simulator</name>

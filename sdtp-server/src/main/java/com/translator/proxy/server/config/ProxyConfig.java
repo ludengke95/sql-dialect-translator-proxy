@@ -1,3 +1,4 @@
+
 package com.translator.proxy.server.config;
 
 import java.util.ArrayList;
@@ -7,8 +8,8 @@ import java.util.Objects;
 /**
  * Proxy 配置模型 —— 支持多后端数据库实例。
  *
- * <p>客户端通过 JDBC URL 中的 database 名称或 &#64;64;USE db_name 选择后端。
- * 启动时加载全部后端连接池，按 {@link TargetConfig#getName()} 索引。
+ * <p>
+ * 客户端通过 JDBC URL 中的 database 名称或 &#64;64;USE db_name 选择后端。 启动时加载全部后端连接池，按 {@link TargetConfig#getName()} 索引。
  */
 public class ProxyConfig {
 
@@ -138,8 +139,7 @@ public class ProxyConfig {
     }
 
     /**
-     * 单个后端数据库实例配置。
-     * name 字段对应客户端连接时指定的数据库名称。
+     * 单个后端数据库实例配置。 name 字段对应客户端连接时指定的数据库名称。
      */
     public static class TargetConfig {
         /** 后端名称，客户端通过 USE {@literal <name>} 或 JDBC URL database 连接 */
@@ -232,8 +232,10 @@ public class ProxyConfig {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof TargetConfig)) return false;
+            if (this == o)
+                return true;
+            if (!(o instanceof TargetConfig))
+                return false;
             TargetConfig that = (TargetConfig) o;
             return maxPoolSize == that.maxPoolSize
                     && minIdle == that.minIdle
@@ -276,8 +278,10 @@ public class ProxyConfig {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof TranslationConf)) return false;
+            if (this == o)
+                return true;
+            if (!(o instanceof TranslationConf))
+                return false;
             TranslationConf that = (TranslationConf) o;
             return Objects.equals(keywordCase, that.keywordCase) && Objects.equals(identifierCase, that.identifierCase);
         }

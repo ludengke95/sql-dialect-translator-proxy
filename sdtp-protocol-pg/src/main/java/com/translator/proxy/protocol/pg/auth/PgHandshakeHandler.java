@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.auth;
 
 import java.nio.charset.StandardCharsets;
@@ -21,14 +22,15 @@ import io.netty.util.concurrent.EventExecutorGroup;
 /**
  * PostgreSQL 握手处理器 —— 处理 StartupMessage 和 MD5 认证。
  *
- * <p>流程：
+ * <p>
+ * 流程：
  * <ol>
- *   <li>接收 StartupMessage（协议版本 3.0，用户/数据库参数）</li>
- *   <li>发送 AuthenticationMD5Password（'R' + int32(5) + salt）</li>
- *   <li>接收密码响应（'p' 消息，payload 为 "md5" + 32 hex）</li>
- *   <li>调用 PgAuth 验证，发送 AuthenticationOk</li>
- *   <li>发送 ParameterStatus 消息 + BackendKeyData + ReadyForQuery</li>
- *   <li>认证成功后 pipeline 切换到 PgCommandHandler</li>
+ * <li>接收 StartupMessage（协议版本 3.0，用户/数据库参数）</li>
+ * <li>发送 AuthenticationMD5Password（'R' + int32(5) + salt）</li>
+ * <li>接收密码响应（'p' 消息，payload 为 "md5" + 32 hex）</li>
+ * <li>调用 PgAuth 验证，发送 AuthenticationOk</li>
+ * <li>发送 ParameterStatus 消息 + BackendKeyData + ReadyForQuery</li>
+ * <li>认证成功后 pipeline 切换到 PgCommandHandler</li>
  * </ol>
  */
 public class PgHandshakeHandler extends ChannelInboundHandlerAdapter {
@@ -66,12 +68,15 @@ public class PgHandshakeHandler extends ChannelInboundHandlerAdapter {
         try {
             if (raw.isStartup()) {
                 handleStartup(ctx, raw);
-            } else if (raw.getType() == 'p') {
+            }
+            else if (raw.getType() == 'p') {
                 handlePassword(ctx, raw);
-            } else {
+            }
+            else {
                 log.debug("Ignoring message type: {} during handshake", (char) raw.getType());
             }
-        } finally {
+        }
+        finally {
             raw.release();
         }
     }
@@ -100,7 +105,8 @@ public class PgHandshakeHandler extends ChannelInboundHandlerAdapter {
 
             if ("user".equals(key)) {
                 clientUser = value;
-            } else if ("database".equals(key)) {
+            }
+            else if ("database".equals(key)) {
                 clientDatabase = value;
             }
         }
@@ -176,7 +182,8 @@ public class PgHandshakeHandler extends ChannelInboundHandlerAdapter {
                             "commandHandler",
                             new PgCommandHandler(backendRouter));
             ctx.pipeline().remove(this);
-        } else {
+        }
+        else {
             ctx.pipeline().replace(this, "commandHandler", new PgCommandHandler(backendRouter));
         }
     }

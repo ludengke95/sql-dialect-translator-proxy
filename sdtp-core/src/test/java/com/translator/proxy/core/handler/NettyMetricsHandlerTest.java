@@ -1,3 +1,4 @@
+
 package com.translator.proxy.core.handler;
 
 import static org.junit.Assert.*;
@@ -20,11 +21,11 @@ public class NettyMetricsHandlerTest {
         EmbeddedChannel channel = new EmbeddedChannel(new NettyMetricsHandler());
 
         // 测试读取
-        ByteBuf in = Unpooled.copiedBuffer(new byte[] {1, 2, 3, 4, 5});
+        ByteBuf in = Unpooled.copiedBuffer(new byte[]{1, 2, 3, 4, 5});
         channel.writeInbound(in);
 
         // 测试写入
-        ByteBuf out = Unpooled.copiedBuffer(new byte[] {6, 7, 8});
+        ByteBuf out = Unpooled.copiedBuffer(new byte[]{6, 7, 8});
         channel.writeOutbound(out);
 
         double readAfter = NettyMetrics.BYTES_READ.get();

@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.constant;
 
 /**
@@ -5,7 +6,8 @@ package com.translator.proxy.protocol.mysql.constant;
  */
 public final class ColumnType {
 
-    private ColumnType() {}
+    private ColumnType() {
+    }
 
     public static final int FIELD_TYPE_DECIMAL = 0x00;
     public static final int FIELD_TYPE_TINY = 0x01;

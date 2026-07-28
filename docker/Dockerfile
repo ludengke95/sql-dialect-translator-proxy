@@ -30,6 +30,6 @@ RUN mkdir -p logs
 EXPOSE 7788
 
 # JVM 参数优化
-ENV JAVA_OPTS="-Xms256m -Xms512m -XX:+UseG1GC"
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC"
 
-ENTRYPOINT ["./bin/start.sh", "start-fg"]
+ENTRYPOINT ["./bin/sdtp.sh", "start-fg"]

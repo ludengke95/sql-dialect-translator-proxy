@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.constant;
 
 /**
@@ -5,7 +6,8 @@ package com.translator.proxy.protocol.mysql.constant;
  */
 public final class ServerStatus {
 
-    private ServerStatus() {}
+    private ServerStatus() {
+    }
 
     public static final int SERVER_STATUS_IN_TRANS = 0x0001;
     public static final int SERVER_STATUS_AUTOCOMMIT = 0x0002;

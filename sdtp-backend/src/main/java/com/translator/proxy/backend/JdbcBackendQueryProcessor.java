@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend;
 
 import java.sql.*;
@@ -20,10 +21,11 @@ import io.netty.channel.ChannelHandlerContext;
 /**
  * 基于 JDBC 的后端查询处理器。
  *
- * <p>实现 QueryProcessor 接口，管理 HikariCP 连接池，
- * 在独立线程中执行 SQL 并通过 ResultSetEncoder 将结果流式回传。
+ * <p>
+ * 实现 QueryProcessor 接口，管理 HikariCP 连接池， 在独立线程中执行 SQL 并通过 ResultSetEncoder 将结果流式回传。
  *
- * <p>线程安全：连接池本身是线程安全的，每个查询从池中获取连接后独立执行。
+ * <p>
+ * 线程安全：连接池本身是线程安全的，每个查询从池中获取连接后独立执行。
  */
 public class JdbcBackendQueryProcessor implements QueryProcessor {
     private static final Logger log = LoggerFactory.getLogger(JdbcBackendQueryProcessor.class);
@@ -37,6 +39,7 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
     private JdbcBackendQueryProcessor(HikariDataSource dataSource) {
         this.dataSource = dataSource;
     }
+
     /**
      * 工厂方法：根据配置创建处理器。
      */
@@ -44,6 +47,7 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
             String jdbcUrl, String username, String password, int maxPoolSize, int minIdle) {
         return create(null, jdbcUrl, username, password, maxPoolSize, minIdle);
     }
+
     /**
      * 工厂方法：根据配置创建处理器（带后端名称，用于指标打点）。
      */
@@ -87,8 +91,7 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
         boolean isNewConnection = false;
 
         // 获取并清除 SQL 翻译审计上下文
-        SqlTranslationContext transCtx =
-                ctx.channel().attr(SessionAttribute.SQL_CONTEXT_KEY).getAndSet(null);
+        SqlTranslationContext transCtx = ctx.channel().attr(SessionAttribute.SQL_CONTEXT_KEY).getAndSet(null);
 
         try {
             if (isTx) {
@@ -99,7 +102,8 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
                     ctx.channel().attr(SessionAttribute.BACKEND_CONN_KEY).set(conn);
                     isNewConnection = true;
                 }
-            } else {
+            }
+            else {
                 conn = dataSource.getConnection();
                 isNewConnection = true;
             }
@@ -109,7 +113,8 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
                     try (ResultSet rs = stmt.getResultSet()) {
                         ResultSetEncoder.encodeAndWrite(ctx, rs, new ResultSetEncoder.SeqGenerator(), backendName);
                     }
-                } else {
+                }
+                else {
                     int updateCount = stmt.getUpdateCount();
                     ResultSetEncoder.encodeEmpty(ctx, Math.max(updateCount, 0), 0);
                     BackendMetrics.observeAffectedRows(backendName, Math.max(updateCount, 0));
@@ -120,7 +125,8 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
 
             // 记录成功执行审计日志
             logSqlTranslationRecord(ctx, transCtx, true, null);
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             log.error("SQL execution failed: {}", formatSqlForLog(sql), e);
             String sqlState = e.getSQLState() != null ? e.getSQLState() : "HY000";
             BackendMetrics.recordError(backendName, sqlState);
@@ -130,7 +136,8 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
 
             // 记录执行错误审计日志
             logSqlTranslationRecord(ctx, transCtx, false, e.getMessage());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Unexpected error executing SQL: {}", formatSqlForLog(sql), e);
             BackendMetrics.recordError(backendName, "HY000");
             double elapsed = (System.nanoTime() - startNanos) / 1_000_000_000.0;
@@ -139,23 +146,27 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
 
             // 记录其它异常审计日志
             logSqlTranslationRecord(ctx, transCtx, false, e.getMessage());
-        } finally {
+        }
+        finally {
             // 2. 关键：非事务连接即用即走，执行完必须立刻关闭释放；事务连接不在此处关闭，保留在 Channel 属性中
             if (!isTx && conn != null) {
                 try {
                     conn.close();
-                } catch (SQLException e) {
+                }
+                catch (SQLException e) {
                     log.error("Failed to close non-tx connection", e);
                 }
             }
         }
     }
+
     /**
      * 设置后端名称（用于指标打点）。
      */
     public void setBackendName(String backendName) {
         this.backendName = backendName;
     }
+
     /**
      * 创建 Statement 并配置流式读取。
      */
@@ -167,6 +178,7 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
         stmt.setFetchSize(1000);
         return stmt;
     }
+
     // ==================== 错误处理 ====================
     private void writeError(ChannelHandlerContext ctx, SQLException e) {
         int errorCode = e.getErrorCode();
@@ -190,7 +202,8 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
             try {
                 log.debug("Committing physical connection: {}", conn);
                 conn.commit();
-            } finally {
+            }
+            finally {
                 cleanupConnection(ctx, conn);
             }
         }
@@ -203,7 +216,8 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
             try {
                 log.debug("Rolling back physical connection: {}", conn);
                 conn.rollback();
-            } finally {
+            }
+            finally {
                 cleanupConnection(ctx, conn);
             }
         }
@@ -216,9 +230,11 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
             try {
                 log.warn("Force closing session bound connection due to inactive/exception");
                 conn.rollback();
-            } catch (SQLException e) {
+            }
+            catch (SQLException e) {
                 log.error("Failed to rollback during force close", e);
-            } finally {
+            }
+            finally {
                 cleanupConnection(ctx, conn);
             }
         }
@@ -230,13 +246,16 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
                 conn.setAutoCommit(true); // 还原为自动提交，以归还连接池
                 conn.close(); // 归还连接池
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             log.error("Error cleaning up session connection", e);
-        } finally {
+        }
+        finally {
             ctx.channel().attr(SessionAttribute.BACKEND_CONN_KEY).set(null);
             // FrontendSession no longer tracks activeTxBackend
         }
     }
+
     /**
      * 关闭连接池。
      */

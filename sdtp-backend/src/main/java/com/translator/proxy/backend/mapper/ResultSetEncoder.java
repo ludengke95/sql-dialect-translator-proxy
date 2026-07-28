@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend.mapper;
 
 import java.nio.charset.StandardCharsets;
@@ -24,10 +25,12 @@ import io.netty.channel.ChannelHandlerContext;
 /**
  * JDBC ResultSet → 线协议包编码器（SPI 可插拔版）。
  *
- * <p>通过 {@link TypeMapper} 和 {@link ResponseWriter} 接口解耦协议细节。
- * 默认使用 MySQL 协议实现（向后兼容），可通过 SPI 切换为其他协议。
+ * <p>
+ * 通过 {@link TypeMapper} 和 {@link ResponseWriter} 接口解耦协议细节。 默认使用 MySQL 协议实现（向后兼容），可通过 SPI 切换为其他协议。
  *
- * <p>协议结果集包序列：
+ * <p>
+ * 协议结果集包序列：
+ *
  * <pre>
  *   ColumnCount → N*ColumnDef → EOF → N*Row → EOF/OK
  * </pre>
@@ -43,7 +46,8 @@ public final class ResultSetEncoder {
     /** SPI 响应写入器（可注入） */
     private static volatile ResponseWriter responseWriter = null;
 
-    private ResultSetEncoder() {}
+    private ResultSetEncoder() {
+    }
 
     /**
      * 注入 SPI 类型映射器。不设置时使用默认 MySQL 映射。
@@ -146,13 +150,17 @@ public final class ResultSetEncoder {
     /**
      * 协议无关的错误写入。
      *
-     * <p>注入了 ResponseWriter 时委托给协议实现（如 PG ErrorResponse），
-     * 否则回退为 MySQL ERR 包（向后兼容）。
+     * <p>
+     * 注入了 ResponseWriter 时委托给协议实现（如 PG ErrorResponse）， 否则回退为 MySQL ERR 包（向后兼容）。
      *
-     * @param ctx          Netty 上下文
-     * @param errorCode    错误码
-     * @param sqlState     SQL 状态码
-     * @param message      错误消息
+     * @param ctx
+     *            Netty 上下文
+     * @param errorCode
+     *            错误码
+     * @param sqlState
+     *            SQL 状态码
+     * @param message
+     *            错误消息
      */
     public static void writeError(ChannelHandlerContext ctx, int errorCode, String sqlState, String message) {
         if (responseWriter != null) {
@@ -179,7 +187,8 @@ public final class ResultSetEncoder {
         int mysqlType;
         if (typeMapper != null) {
             mysqlType = typeMapper.jdbcToProtocolType(jdbcType, typeName);
-        } else {
+        }
+        else {
             mysqlType = com.translator.proxy.backend.mapper.TypeMapper.jdbcToMysql(jdbcType);
         }
 
@@ -218,7 +227,8 @@ public final class ResultSetEncoder {
             boolean wasNull = rs.wasNull();
             if (wasNull || value == null) {
                 buf.writeByte(0xFB);
-            } else {
+            }
+            else {
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 BufferUtils.writeLengthEncodedInt(buf, bytes.length);
                 buf.writeBytes(bytes);
@@ -236,8 +246,7 @@ public final class ResultSetEncoder {
     }
 
     private static int getStatusFlags(ChannelHandlerContext ctx) {
-        FrontendSession session =
-                ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
+        FrontendSession session = ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
         int flags = ServerStatus.SERVER_STATUS_AUTOCOMMIT;
         if (session != null) {
             flags = 0;

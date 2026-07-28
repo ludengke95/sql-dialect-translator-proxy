@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.frontend;
 
 import java.util.ArrayList;
@@ -11,8 +12,8 @@ import org.slf4j.LoggerFactory;
 /**
  * SPI 协议加载工具类。
  *
- * <p>通过 Java 原生 {@link ServiceLoader} 加载所有 {@link FrontendProtocol} 实现。
- * 提供按协议 ID 查找和返回默认实现的能力。
+ * <p>
+ * 通过 Java 原生 {@link ServiceLoader} 加载所有 {@link FrontendProtocol} 实现。 提供按协议 ID 查找和返回默认实现的能力。
  */
 public final class FrontendProtocols {
 
@@ -21,7 +22,8 @@ public final class FrontendProtocols {
     /** 延迟加载的协议列表 */
     private static volatile List<FrontendProtocol> protocols;
 
-    private FrontendProtocols() {}
+    private FrontendProtocols() {
+    }
 
     /**
      * 加载所有注册的 {@link FrontendProtocol} 实现。
@@ -44,7 +46,8 @@ public final class FrontendProtocols {
                                     protocol.getClass().getName(),
                                     protocol.id(),
                                     protocol.defaultPort());
-                        } catch (Exception e) {
+                        }
+                        catch (Exception e) {
                             log.warn("Failed to load frontend protocol implementation", e);
                         }
                     }
@@ -58,9 +61,11 @@ public final class FrontendProtocols {
     /**
      * 按协议 ID 查找指定协议。
      *
-     * @param protocolId 协议 ID，如 "MYSQL"、"POSTGRESQL"
+     * @param protocolId
+     *            协议 ID，如 "MYSQL"、"POSTGRESQL"
      * @return 匹配的协议实例
-     * @throws IllegalArgumentException 如果找不到对应协议
+     * @throws IllegalArgumentException
+     *             如果找不到对应协议
      */
     public static FrontendProtocol load(String protocolId) {
         if (protocolId == null || protocolId.isEmpty()) {
@@ -81,7 +86,8 @@ public final class FrontendProtocols {
      * 返回第一个找到的协议实现（默认协议）。
      *
      * @return 默认协议实例
-     * @throws IllegalArgumentException 如果没有任何协议实现
+     * @throws IllegalArgumentException
+     *             如果没有任何协议实现
      */
     public static FrontendProtocol loadDefault() {
         List<FrontendProtocol> all = loadAll();

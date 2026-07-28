@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.util;
 
 import java.nio.charset.StandardCharsets;
@@ -9,28 +10,29 @@ import java.security.NoSuchAlgorithmException;
  *
  * <h3>mysql_native_password</h3>
  * <ol>
- *   <li>服务端生成 20 字节随机数（scramble）发给客户端</li>
- *   <li>客户端计算：SHA1(password) XOR SHA1(scramble + SHA1(SHA1(password)))</li>
- *   <li>客户端将 20 字节结果回传，服务端比对</li>
+ * <li>服务端生成 20 字节随机数（scramble）发给客户端</li>
+ * <li>客户端计算：SHA1(password) XOR SHA1(scramble + SHA1(SHA1(password)))</li>
+ * <li>客户端将 20 字节结果回传，服务端比对</li>
  * </ol>
  *
  * <h3>caching_sha2_password</h3>
  * <ol>
- *   <li>客户端计算：SHA256(password) XOR SHA256(scramble + SHA256(SHA256(password)))</li>
- *   <li>客户端将 32 字节结果回传</li>
- *   <li>服务端比对，成功后先发 AuthMoreData(0x03=fast_auth_success) 再发 OK</li>
+ * <li>客户端计算：SHA256(password) XOR SHA256(scramble + SHA256(SHA256(password)))</li>
+ * <li>客户端将 32 字节结果回传</li>
+ * <li>服务端比对，成功后先发 AuthMoreData(0x03=fast_auth_success) 再发 OK</li>
  * </ol>
  */
 public final class MySQLAuth {
 
-    private MySQLAuth() {}
+    private MySQLAuth() {
+    }
 
     /**
      * 生成 20 字节随机 scramble（Auth Plugin Data）。
      *
-     * <p>scramble 取值范围为可打印 ASCII (0x21-0x7E)，避免 NUL 字节，
-     * 同时兼容 MySQL JDBC 5.1.x 驱动将 seed 作为 String 处理的场景
-     * （String 转换对非 ASCII 字节可能引入编码问题）。
+     * <p>
+     * scramble 取值范围为可打印 ASCII (0x21-0x7E)，避免 NUL 字节， 同时兼容 MySQL JDBC 5.1.x 驱动将 seed 作为 String 处理的场景 （String 转换对非 ASCII
+     * 字节可能引入编码问题）。
      */
     public static byte[] generateScramble() {
         byte[] scramble = new byte[20];
@@ -45,9 +47,12 @@ public final class MySQLAuth {
     /**
      * 服务端验证客户端发来的 token 是否正确。
      *
-     * @param password     服务端存储的明文密码
-     * @param scramble     服务端发出去的 20 字节 scramble（Auth Plugin Data）
-     * @param clientToken  客户端回传的加密 token
+     * @param password
+     *            服务端存储的明文密码
+     * @param scramble
+     *            服务端发出去的 20 字节 scramble（Auth Plugin Data）
+     * @param clientToken
+     *            客户端回传的加密 token
      * @return true 如果验证通过
      */
     public static boolean verify(String password, byte[] scramble, byte[] clientToken) {
@@ -69,8 +74,10 @@ public final class MySQLAuth {
     /**
      * 客户端计算 native_password 加密结果（用于测试验证）。
      *
-     * @param password 明文密码
-     * @param scramble 服务端 scramble（20 字节）
+     * @param password
+     *            明文密码
+     * @param scramble
+     *            服务端 scramble（20 字节）
      * @return 加密后的 20 字节 token
      */
     public static byte[] scramble411(String password, byte[] scramble) {
@@ -101,7 +108,8 @@ public final class MySQLAuth {
             }
             return result;
 
-        } catch (NoSuchAlgorithmException e) {
+        }
+        catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-1 algorithm not available", e);
         }
     }
@@ -111,9 +119,12 @@ public final class MySQLAuth {
     /**
      * 服务端验证 caching_sha2_password 客户端 token（fast auth）。
      *
-     * @param password     服务端存储的明文密码
-     * @param scramble     服务端发出去的 20 字节 scramble
-     * @param clientToken  客户端回传的加密 token（应为 32 字节）
+     * @param password
+     *            服务端存储的明文密码
+     * @param scramble
+     *            服务端发出去的 20 字节 scramble
+     * @param clientToken
+     *            客户端回传的加密 token（应为 32 字节）
      * @return true 如果验证通过
      */
     public static boolean verifySha256(String password, byte[] scramble, byte[] clientToken) {
@@ -142,8 +153,10 @@ public final class MySQLAuth {
      *   result = stage1 XOR stage3    （32 字节）
      * </pre>
      *
-     * @param password 明文密码
-     * @param scramble 服务端 scramble（20 字节）
+     * @param password
+     *            明文密码
+     * @param scramble
+     *            服务端 scramble（20 字节）
      * @return 32 字节的 fast auth token
      */
     public static byte[] scramble411Sha256(String password, byte[] scramble) {
@@ -174,7 +187,8 @@ public final class MySQLAuth {
             }
             return result;
 
-        } catch (NoSuchAlgorithmException e) {
+        }
+        catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 algorithm not available", e);
         }
     }

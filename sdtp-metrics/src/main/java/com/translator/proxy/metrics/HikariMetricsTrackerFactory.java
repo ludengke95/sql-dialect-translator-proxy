@@ -1,3 +1,4 @@
+
 package com.translator.proxy.metrics;
 
 import java.util.Map;
@@ -17,12 +18,13 @@ import io.prometheus.client.Histogram;
 /**
  * HikariCP 连接池指标桥接。
  *
- * <p>实现 {@link MetricsTrackerFactory} 和 {@link IMetricsTracker}，
- * 将 HikariCP 连接池事件映射为 Prometheus 指标。
+ * <p>
+ * 实现 {@link MetricsTrackerFactory} 和 {@link IMetricsTracker}， 将 HikariCP 连接池事件映射为 Prometheus 指标。
  *
- * <p>Label 说明：
+ * <p>
+ * Label 说明：
  * <ul>
- *   <li>{@code pool_name} — 连接池名称（对应 BackendEntry.name）</li>
+ * <li>{@code pool_name} — 连接池名称（对应 BackendEntry.name）</li>
  * </ul>
  */
 public final class HikariMetricsTrackerFactory implements MetricsTrackerFactory {
@@ -106,8 +108,7 @@ public final class HikariMetricsTrackerFactory implements MetricsTrackerFactory 
     }
 
     /**
-     * 刷新所有已注册连接池的 Gauge 指标。
-     * 应由 MetricsModule 定期调用（如每 15 秒）。
+     * 刷新所有已注册连接池的 Gauge 指标。 应由 MetricsModule 定期调用（如每 15 秒）。
      */
     public static void refreshPoolGauges() {
         for (Map.Entry<String, PoolStats> entry : POOL_STATS_MAP.entrySet()) {
@@ -118,7 +119,8 @@ public final class HikariMetricsTrackerFactory implements MetricsTrackerFactory 
                 IDLE_CONNECTIONS.labels(poolName).set(stats.getIdleConnections());
                 PENDING_CONNECTIONS.labels(poolName).set(stats.getPendingThreads());
                 TOTAL_CONNECTIONS.labels(poolName).set(stats.getTotalConnections());
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.debug("Failed to refresh pool gauge for '{}': {}", poolName, e.getMessage());
             }
         }

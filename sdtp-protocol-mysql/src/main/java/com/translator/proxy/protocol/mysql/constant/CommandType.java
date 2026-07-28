@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.constant;
 
 /**
@@ -5,7 +6,8 @@ package com.translator.proxy.protocol.mysql.constant;
  */
 public final class CommandType {
 
-    private CommandType() {}
+    private CommandType() {
+    }
 
     /** 0x00: COM_SLEEP（内部使用，客户端不会发） */
     public static final int COM_SLEEP = 0x00;
@@ -47,42 +49,42 @@ public final class CommandType {
      */
     public static String nameOf(int command) {
         switch (command) {
-            case COM_SLEEP:
-                return "COM_SLEEP";
-            case COM_QUIT:
-                return "COM_QUIT";
-            case COM_INIT_DB:
-                return "COM_INIT_DB";
-            case COM_QUERY:
-                return "COM_QUERY";
-            case COM_FIELD_LIST:
-                return "COM_FIELD_LIST";
-            case COM_CREATE_DB:
-                return "COM_CREATE_DB";
-            case COM_DROP_DB:
-                return "COM_DROP_DB";
-            case COM_REFRESH:
-                return "COM_REFRESH";
-            case COM_PING:
-                return "COM_PING";
-            case COM_STATISTICS:
-                return "COM_STATISTICS";
-            case COM_STMT_PREPARE:
-                return "COM_STMT_PREPARE";
-            case COM_STMT_EXECUTE:
-                return "COM_STMT_EXECUTE";
-            case COM_STMT_CLOSE:
-                return "COM_STMT_CLOSE";
-            case COM_STMT_RESET:
-                return "COM_STMT_RESET";
-            case COM_SET_OPTION:
-                return "COM_SET_OPTION";
-            case COM_STMT_FETCH:
-                return "COM_STMT_FETCH";
-            case COM_RESET_CONNECTION:
-                return "COM_RESET_CONNECTION";
-            default:
-                return "UNKNOWN(0x" + Integer.toHexString(command) + ")";
+        case COM_SLEEP :
+            return "COM_SLEEP";
+        case COM_QUIT :
+            return "COM_QUIT";
+        case COM_INIT_DB :
+            return "COM_INIT_DB";
+        case COM_QUERY :
+            return "COM_QUERY";
+        case COM_FIELD_LIST :
+            return "COM_FIELD_LIST";
+        case COM_CREATE_DB :
+            return "COM_CREATE_DB";
+        case COM_DROP_DB :
+            return "COM_DROP_DB";
+        case COM_REFRESH :
+            return "COM_REFRESH";
+        case COM_PING :
+            return "COM_PING";
+        case COM_STATISTICS :
+            return "COM_STATISTICS";
+        case COM_STMT_PREPARE :
+            return "COM_STMT_PREPARE";
+        case COM_STMT_EXECUTE :
+            return "COM_STMT_EXECUTE";
+        case COM_STMT_CLOSE :
+            return "COM_STMT_CLOSE";
+        case COM_STMT_RESET :
+            return "COM_STMT_RESET";
+        case COM_SET_OPTION :
+            return "COM_SET_OPTION";
+        case COM_STMT_FETCH :
+            return "COM_STMT_FETCH";
+        case COM_RESET_CONNECTION :
+            return "COM_RESET_CONNECTION";
+        default :
+            return "UNKNOWN(0x" + Integer.toHexString(command) + ")";
         }
     }
 }

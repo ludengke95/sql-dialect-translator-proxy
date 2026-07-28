@@ -1,3 +1,4 @@
+
 package com.translator.proxy.metrics;
 
 import io.prometheus.client.Counter;
@@ -7,17 +8,19 @@ import io.prometheus.client.Histogram;
 /**
  * 配置热更新相关指标。
  *
- * <p>Label 说明：
+ * <p>
+ * Label 说明：
  * <ul>
- *   <li>{@code action} — reload 动作类型（add / remove / reload）</li>
- *   <li>{@code backend_name} — 后端名称</li>
- *   <li>{@code result} — drain 结果（ok / timeout）</li>
- *   <li>{@code reason} — 拒绝原因（full / timeout）</li>
+ * <li>{@code action} — reload 动作类型（add / remove / reload）</li>
+ * <li>{@code backend_name} — 后端名称</li>
+ * <li>{@code result} — drain 结果（ok / timeout）</li>
+ * <li>{@code reason} — 拒绝原因（full / timeout）</li>
  * </ul>
  */
 public final class ReloadMetrics {
 
-    private ReloadMetrics() {}
+    private ReloadMetrics() {
+    }
 
     /** 配置变更次数（按 action 和 backend_name 分 label） */
     public static final Counter RELOAD_TOTAL = Counter.build()
@@ -74,7 +77,10 @@ public final class ReloadMetrics {
         RELOAD_DRAIN.labels(backendName, ok ? "ok" : "timeout").inc();
     }
 
-    /** @param reason full（队列满）或 timeout（drain 超时时清空队列） */
+    /**
+     * @param reason
+     *            full（队列满）或 timeout（drain 超时时清空队列）
+     */
     public static void recordQueueRejection(String backendName, String reason) {
         RELOAD_QUEUE_REJECTIONS.labels(backendName, reason).inc();
     }

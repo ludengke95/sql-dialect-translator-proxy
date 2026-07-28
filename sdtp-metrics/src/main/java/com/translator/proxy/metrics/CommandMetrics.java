@@ -1,3 +1,4 @@
+
 package com.translator.proxy.metrics;
 
 import io.prometheus.client.Counter;
@@ -6,14 +7,16 @@ import io.prometheus.client.Histogram;
 /**
  * 命令层指标：各命令的计数、耗时、异常和系统变量拦截。
  *
- * <p>Label 说明：
+ * <p>
+ * Label 说明：
  * <ul>
- *   <li>{@code command} — 命令类型（COM_QUERY / COM_PING / COM_QUIT / COM_INIT_DB 等）</li>
+ * <li>{@code command} — 命令类型（COM_QUERY / COM_PING / COM_QUIT / COM_INIT_DB 等）</li>
  * </ul>
  */
 public final class CommandMetrics {
 
-    private CommandMetrics() {}
+    private CommandMetrics() {
+    }
 
     /** 命令总数（按 command 类型分 label） */
     public static final Counter TOTAL = Counter.build()
@@ -65,8 +68,7 @@ public final class CommandMetrics {
     }
 
     /**
-     * 创建一个计时器，用于 Histogram 打点。
-     * 用法：try (Timer t = CommandMetrics.startTimer("COM_QUERY")) { ... }
+     * 创建一个计时器，用于 Histogram 打点。 用法：try (Timer t = CommandMetrics.startTimer("COM_QUERY")) { ... }
      */
     public static Timer startTimer(String command) {
         return new Timer(command);

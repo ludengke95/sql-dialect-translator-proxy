@@ -1,13 +1,16 @@
+
 package com.translator.proxy.protocol.pg.result;
 
 /**
  * PostgreSQL OID 类型常量。
  *
- * <p>用于 RowDescription 消息中的列类型 OID 字段。
+ * <p>
+ * 用于 RowDescription 消息中的列类型 OID 字段。
  */
 public final class PgOid {
 
-    private PgOid() {}
+    private PgOid() {
+    }
 
     public static final int BOOL = 16;
     public static final int BYTEA = 17;

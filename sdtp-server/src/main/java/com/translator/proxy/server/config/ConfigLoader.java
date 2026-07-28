@@ -1,3 +1,4 @@
+
 package com.translator.proxy.server.config;
 
 import java.io.File;
@@ -15,24 +16,27 @@ import org.yaml.snakeyaml.Yaml;
 /**
  * YAML 配置文件加载器。
  *
- * <p>支持新旧两种配置格式：
+ * <p>
+ * 支持新旧两种配置格式：
  * <ul>
- *   <li>新格式：backends 列表（每个后端含 name、dialect、jdbc-url、账密、连接池参数）</li>
- *   <li>旧格式：单 target（自动转换为 backends 列表）</li>
+ * <li>新格式：backends 列表（每个后端含 name、dialect、jdbc-url、账密、连接池参数）</li>
+ * <li>旧格式：单 target（自动转换为 backends 列表）</li>
  * </ul>
  *
- * <p>查找顺序：
+ * <p>
+ * 查找顺序：
  * <ol>
- *   <li>系统属性 -Dproxy.config=/path/to/config.yml</li>
- *   <li>classpath 下的 proxy-config.yml</li>
- *   <li>当前目录下的 proxy-config.yml</li>
+ * <li>系统属性 -Dproxy.config=/path/to/config.yml</li>
+ * <li>classpath 下的 proxy-config.yml</li>
+ * <li>当前目录下的 proxy-config.yml</li>
  * </ol>
  */
 public final class ConfigLoader {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigLoader.class);
 
-    private ConfigLoader() {}
+    private ConfigLoader() {
+    }
 
     /**
      * 解析配置文件的真实路径（与 load() 同一查找顺序）。
@@ -49,7 +53,8 @@ public final class ConfigLoader {
         if (classpathStream != null) {
             try {
                 classpathStream.close();
-            } catch (IOException ignored) {
+            }
+            catch (IOException ignored) {
             }
             return null; // classpath 资源不可文件监听
         }
@@ -75,7 +80,8 @@ public final class ConfigLoader {
 
         try {
             return loadFromFile("proxy-config.yml");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.info("No proxy-config.yml found, using defaults");
             return new ProxyConfig();
         }
@@ -84,7 +90,8 @@ public final class ConfigLoader {
     /**
      * 从文件加载配置，失败时返回 null 而不抛异常（供 watcher 热加载使用）。
      *
-     * @param path 配置文件路径
+     * @param path
+     *            配置文件路径
      * @return 解析后的 ProxyConfig，失败时返回 null
      */
     public static ProxyConfig loadFromFileOrNull(String path) {
@@ -93,7 +100,8 @@ public final class ConfigLoader {
         }
         try (FileInputStream fis = new FileInputStream(path)) {
             return loadFromStream(fis);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Failed to reload config from {}: {}", path, e.getMessage());
             return null;
         }
@@ -103,9 +111,11 @@ public final class ConfigLoader {
         log.info("Loading config from file: {}", path);
         try (FileInputStream fis = new FileInputStream(path)) {
             return loadFromStream(fis);
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             throw new RuntimeException("Config file not found: " + path, e);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException("Failed to load config from: " + path, e);
         }
     }
@@ -162,9 +172,11 @@ public final class ConfigLoader {
                     if (url != null && url.contains("/")) {
                         String dbName = url.substring(url.lastIndexOf('/') + 1);
                         int paramIdx = dbName.indexOf('?');
-                        if (paramIdx > 0) dbName = dbName.substring(0, paramIdx);
+                        if (paramIdx > 0)
+                            dbName = dbName.substring(0, paramIdx);
                         tc.setName(dbName);
-                    } else {
+                    }
+                    else {
                         tc.setName("mydb");
                     }
                 }
@@ -216,13 +228,20 @@ public final class ConfigLoader {
 
     private static ProxyConfig.TargetConfig parseTargetConfig(Map<String, Object> map) {
         ProxyConfig.TargetConfig tc = new ProxyConfig.TargetConfig();
-        if (map.get("name") != null) tc.setName((String) map.get("name"));
-        if (map.get("dialect") != null) tc.setDialect((String) map.get("dialect"));
-        if (map.get("jdbc-url") != null) tc.setJdbcUrl((String) map.get("jdbc-url"));
-        if (map.get("username") != null) tc.setUsername((String) map.get("username"));
-        if (map.get("password") != null) tc.setPassword((String) map.get("password"));
-        if (map.get("max-pool-size") != null) tc.setMaxPoolSize(((Number) map.get("max-pool-size")).intValue());
-        if (map.get("min-idle") != null) tc.setMinIdle(((Number) map.get("min-idle")).intValue());
+        if (map.get("name") != null)
+            tc.setName((String) map.get("name"));
+        if (map.get("dialect") != null)
+            tc.setDialect((String) map.get("dialect"));
+        if (map.get("jdbc-url") != null)
+            tc.setJdbcUrl((String) map.get("jdbc-url"));
+        if (map.get("username") != null)
+            tc.setUsername((String) map.get("username"));
+        if (map.get("password") != null)
+            tc.setPassword((String) map.get("password"));
+        if (map.get("max-pool-size") != null)
+            tc.setMaxPoolSize(((Number) map.get("max-pool-size")).intValue());
+        if (map.get("min-idle") != null)
+            tc.setMinIdle(((Number) map.get("min-idle")).intValue());
         return tc;
     }
 }

@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.command;
 
 import org.junit.Assert;

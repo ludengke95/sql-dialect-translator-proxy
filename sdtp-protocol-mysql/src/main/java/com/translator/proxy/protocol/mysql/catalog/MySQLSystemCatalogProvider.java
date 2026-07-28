@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.catalog;
 
 import java.util.ArrayList;
@@ -18,38 +19,37 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 /**
- * MySQL 系统目录提供者 —— 已内联原 {@code SystemVariableInterceptor} 的全部逻辑，
- * 模拟 MySQL 系统变量查询（{@code SELECT @@xxx}、{@code SHOW VARIABLES}、
- * {@code SELECT DATABASE()}、{@code SHOW WARNINGS} 等）。
+ * MySQL 系统目录提供者 —— 已内联原 {@code SystemVariableInterceptor} 的全部逻辑， 模拟 MySQL
+ * 系统变量查询（{@code SELECT @@xxx}、{@code SHOW VARIABLES}、 {@code SELECT DATABASE()}、{@code SHOW WARNINGS} 等）。
  *
- * <p>实现 {@link SystemCatalogProvider} 接口，作为 MySQL 协议的 SPI 插件。
- * 原先分散在 {@code com.translator.proxy.protocol.mysql.util.SystemVariableInterceptor}
- * 中的正则匹配、共享变量表、拦截结果构造等逻辑现已全部并入本类，废弃类已删除。
+ * <p>
+ * 实现 {@link SystemCatalogProvider} 接口，作为 MySQL 协议的 SPI 插件。 原先分散在
+ * {@code com.translator.proxy.protocol.mysql.util.SystemVariableInterceptor} 中的正则匹配、共享变量表、拦截结果构造等逻辑现已全部并入本类，废弃类已删除。
  *
- * <p>共享变量表为进程级单例（{@code static}），由 {@link #setSystemVariable(String, String)}
- * 以 {@code synchronized} 方式更新；外部可通过 {@link #getVariables()} 获取不可变快照。
+ * <p>
+ * 共享变量表为进程级单例（{@code static}），由 {@link #setSystemVariable(String, String)} 以 {@code synchronized} 方式更新；外部可通过
+ * {@link #getVariables()} 获取不可变快照。
  */
 public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
 
     /** SELECT @@variable_name [LIMIT n] */
-    private static final Pattern SELECT_AT_AT =
-            Pattern.compile("^\\s*SELECT\\s+@@(\\w+)(?:\\s+LIMIT\\s+\\d+)?\\s*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SELECT_AT_AT = Pattern.compile("^\\s*SELECT\\s+@@(\\w+)(?:\\s+LIMIT\\s+\\d+)?\\s*$",
+            Pattern.CASE_INSENSITIVE);
 
     /** SHOW VARIABLES LIKE 'xxx' */
-    private static final Pattern SHOW_VARIABLES_LIKE =
-            Pattern.compile("^\\s*SHOW\\s+VARIABLES\\s+LIKE\\s+'([^']*)'\\s*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SHOW_VARIABLES_LIKE = Pattern
+            .compile("^\\s*SHOW\\s+VARIABLES\\s+LIKE\\s+'([^']*)'\\s*$", Pattern.CASE_INSENSITIVE);
 
     /** SELECT DATABASE() */
-    private static final Pattern SELECT_DATABASE =
-            Pattern.compile("^\\s*SELECT\\s+DATABASE\\s*\\(\\s*\\)\\s*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SELECT_DATABASE = Pattern.compile("^\\s*SELECT\\s+DATABASE\\s*\\(\\s*\\)\\s*$",
+            Pattern.CASE_INSENSITIVE);
 
     /** SHOW WARNINGS — mysql CLI 常用，目标库可能不支持 */
-    private static final Pattern SHOW_WARNINGS =
-            Pattern.compile("^\\s*SHOW\\s+WARNINGS\\s*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SHOW_WARNINGS = Pattern.compile("^\\s*SHOW\\s+WARNINGS\\s*$",
+            Pattern.CASE_INSENSITIVE);
 
     /**
-     * 多列系统变量查询：SELECT @@session.var1 AS alias1, @@var2 AS alias2, ...
-     * 用于拦截 MySQL Connector/J 8.0.33 在连接建立时发送的多变量查询。
+     * 多列系统变量查询：SELECT @@session.var1 AS alias1, @@var2 AS alias2, ... 用于拦截 MySQL Connector/J 8.0.33 在连接建立时发送的多变量查询。
      */
     private static final Pattern SELECT_MULTI_AT_AT = Pattern.compile(
             "^\\s*SELECT\\s+@@(?:session\\.)?(\\w+)(?:\\s+AS\\s+\\w+)?(?:,\\s*@@(?:session\\.)?(\\w+)(?:\\s+AS\\s+\\w+)?)*\\s*$",
@@ -101,10 +101,13 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
     /**
      * 更新系统变量的值（线程安全）。
      *
-     * <p>变量名自动转为小写；{@code varName} 为 null 时忽略。
+     * <p>
+     * 变量名自动转为小写；{@code varName} 为 null 时忽略。
      *
-     * @param varName 变量名称
-     * @param value   变量值
+     * @param varName
+     *            变量名称
+     * @param value
+     *            变量值
      */
     public static synchronized void setSystemVariable(String varName, String value) {
         if (varName != null) {
@@ -149,12 +152,15 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
     /**
      * 尝试拦截系统变量查询。
      *
-     * @param sql      原始 SQL
-     * @param database 当前 database（可能为 null，用于 SELECT DATABASE()）
+     * @param sql
+     *            原始 SQL
+     * @param database
+     *            当前 database（可能为 null，用于 SELECT DATABASE()）
      * @return 拦截结果（包含列名和值），如果不应拦截则返回 null
      */
     private InterceptResult intercept(String sql, String database) {
-        if (sql == null) return null;
+        if (sql == null)
+            return null;
 
         // 去除 SQL 前面的注释（如 MySQL Connector/J 的版本注释）
         // 格式: /* mysql-connector-j-8.0.33 ... */ SELECT ...
@@ -229,15 +235,17 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
     /**
      * 从多列系统变量查询中提取变量名和值。
      *
-     * <p>支持格式：
+     * <p>
+     * 支持格式：
      * <ul>
-     *   <li>@@session.var_name AS alias</li>
-     *   <li>@@var_name AS alias</li>
-     *   <li>@@session.var_name</li>
-     *   <li>@@var_name</li>
+     * <li>@@session.var_name AS alias</li>
+     * <li>@@var_name AS alias</li>
+     * <li>@@session.var_name</li>
+     * <li>@@var_name</li>
      * </ul>
      *
-     * @param sql SQL 语句
+     * @param sql
+     *            SQL 语句
      * @return 列信息列表（变量名已标准化为不含 session. 前缀）
      */
     private static List<ColumnInfo> extractMultiVariableNames(String sql) {
@@ -267,11 +275,13 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
     /**
      * 判断是否为 SET 语句（在 Proxy 侧直接生效，不转发）。
      *
-     * @param sql 原始 SQL
+     * @param sql
+     *            原始 SQL
      * @return true 如果是 SET 语句
      */
     public boolean isSetStatement(String sql) {
-        if (sql == null) return false;
+        if (sql == null)
+            return false;
         String trimmed = sql.trim().toUpperCase();
         return trimmed.startsWith("SET ") || trimmed.equals("SET");
     }
@@ -279,11 +289,13 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
     /**
      * 判断是否为 USE 语句（切换 database）。
      *
-     * @param sql 原始 SQL
+     * @param sql
+     *            原始 SQL
      * @return 解析出的 database 名；非 USE 语句返回 null
      */
     public String extractUseDatabase(String sql) {
-        if (sql == null) return null;
+        if (sql == null)
+            return null;
         String trimmed = sql.trim();
         Pattern usePattern = Pattern.compile("^\\s*USE\\s+`?(\\w+)`?\\s*", Pattern.CASE_INSENSITIVE);
         Matcher m = usePattern.matcher(trimmed);
@@ -335,10 +347,11 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
         // Row
         if (!isEmpty) {
             if (ir.twoColumns) {
-                ByteBuf row = MySQLResponseWriter.buildTextRow(ctx.alloc(), new String[] {ir.value1, ir.value2});
+                ByteBuf row = MySQLResponseWriter.buildTextRow(ctx.alloc(), new String[]{ir.value1, ir.value2});
                 ctx.write(new MySQLPacketEncoder.OutgoingPacket(row, seq++));
-            } else {
-                ByteBuf row = MySQLResponseWriter.buildTextRow(ctx.alloc(), new String[] {ir.value1});
+            }
+            else {
+                ByteBuf row = MySQLResponseWriter.buildTextRow(ctx.alloc(), new String[]{ir.value1});
                 ctx.write(new MySQLPacketEncoder.OutgoingPacket(row, seq++));
             }
         }
@@ -397,8 +410,10 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
         /**
          * 构造列信息。
          *
-         * @param columnName 列名
-         * @param value      列值
+         * @param columnName
+         *            列名
+         * @param value
+         *            列值
          */
         public ColumnInfo(String columnName, String value) {
             this.columnName = columnName;
@@ -456,7 +471,8 @@ public class MySQLSystemCatalogProvider implements SystemCatalogProvider {
         /**
          * 多列结果（如 SELECT @@var1 AS alias1, @@var2 AS alias2, ...）。
          *
-         * @param columns 列信息列表
+         * @param columns
+         *            列信息列表
          */
         InterceptResult(List<ColumnInfo> columns) {
             // 设置兼容字段（取第一列信息）

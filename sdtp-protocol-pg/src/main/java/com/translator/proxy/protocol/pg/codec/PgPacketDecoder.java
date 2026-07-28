@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.codec;
 
 import java.util.List;
@@ -12,12 +13,11 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 /**
  * PostgreSQL 协议拆包器。
  *
- * <p>处理两个阶段：
+ * <p>
+ * 处理两个阶段：
  * <ol>
- *   <li><b>Startup 阶段</b>：初始连接时，客户端发送长度前缀 + 协议版本号，
- *       无消息类型码。检测 SSL 请求（版本号 80877103）。</li>
- *   <li><b>Normal 阶段</b>：认证完成后，每条消息格式为
- *       消息类型码（1 字节） + 长度（4 字节，含自身） + payload。</li>
+ * <li><b>Startup 阶段</b>：初始连接时，客户端发送长度前缀 + 协议版本号， 无消息类型码。检测 SSL 请求（版本号 80877103）。</li>
+ * <li><b>Normal 阶段</b>：认证完成后，每条消息格式为 消息类型码（1 字节） + 长度（4 字节，含自身） + payload。</li>
  * </ol>
  */
 public class PgPacketDecoder extends ByteToMessageDecoder {
@@ -36,7 +36,8 @@ public class PgPacketDecoder extends ByteToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         if (!startupComplete) {
             decodeStartup(ctx, in, out);
-        } else {
+        }
+        else {
             decodeNormal(in, out);
         }
     }

@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.codec;
 
 import static org.junit.Assert.*;
@@ -57,12 +58,12 @@ public class MySQLPacketCodecTest {
         // 包 1: payload "AB", seq=0
         in.writeMediumLE(2);
         in.writeByte(0);
-        in.writeBytes(new byte[] {'A', 'B'});
+        in.writeBytes(new byte[]{'A', 'B'});
 
         // 包 2: payload "CDE", seq=1
         in.writeMediumLE(3);
         in.writeByte(1);
-        in.writeBytes(new byte[] {'C', 'D', 'E'});
+        in.writeBytes(new byte[]{'C', 'D', 'E'});
 
         channel.writeInbound(in);
 
@@ -106,7 +107,7 @@ public class MySQLPacketCodecTest {
         ByteBuf in = Unpooled.buffer();
         in.writeMediumLE(10);
         in.writeByte(0);
-        in.writeBytes(new byte[] {1, 2, 3, 4, 5});
+        in.writeBytes(new byte[]{1, 2, 3, 4, 5});
         channel.writeInbound(in);
 
         // payload 不完整，不应解码
@@ -114,7 +115,7 @@ public class MySQLPacketCodecTest {
 
         // 补发剩余 5 字节
         ByteBuf more = Unpooled.buffer();
-        more.writeBytes(new byte[] {6, 7, 8, 9, 10});
+        more.writeBytes(new byte[]{6, 7, 8, 9, 10});
         channel.writeInbound(more);
 
         // 现在应该解码出来了
@@ -162,7 +163,7 @@ public class MySQLPacketCodecTest {
         ByteBuf clientIn = Unpooled.buffer();
         clientIn.writeMediumLE(3);
         clientIn.writeByte(5);
-        clientIn.writeBytes(new byte[] {10, 20, 30});
+        clientIn.writeBytes(new byte[]{10, 20, 30});
         serverChannel.writeInbound(clientIn);
 
         // 服务端解码
@@ -172,7 +173,7 @@ public class MySQLPacketCodecTest {
 
         // 服务端构造响应包
         ByteBuf response = Unpooled.buffer();
-        response.writeBytes(new byte[] {99, 98, 97});
+        response.writeBytes(new byte[]{99, 98, 97});
         serverChannel.writeOutbound(new MySQLPacketEncoder.OutgoingPacket(response, (byte) 6));
 
         // 读取编码后的输出
@@ -183,7 +184,7 @@ public class MySQLPacketCodecTest {
         assertEquals(6, encoded.readByte());
         byte[] respPayload = new byte[3];
         encoded.readBytes(respPayload);
-        assertArrayEquals(new byte[] {99, 98, 97}, respPayload);
+        assertArrayEquals(new byte[]{99, 98, 97}, respPayload);
 
         decoded.release();
         encoded.release();
@@ -296,7 +297,8 @@ public class MySQLPacketCodecTest {
             }
 
             packet.release();
-        } finally {
+        }
+        finally {
             // 确保测试结束彻底释放共享切片
             sliceA.release();
             sliceB.release();
@@ -337,9 +339,11 @@ public class MySQLPacketCodecTest {
                 channel.writeInbound(in);
             }
             fail("当累计大小超过 64MB 限制时，应该抛出 DecoderException 异常");
-        } catch (io.netty.handler.codec.DecoderException e) {
+        }
+        catch (io.netty.handler.codec.DecoderException e) {
             assertTrue("异常消息中应说明超限原因", e.getMessage().contains("exceeds maxAllowedPacketSize limit"));
-        } finally {
+        }
+        finally {
             sliceA.release();
             channel.finish();
         }
@@ -411,7 +415,8 @@ public class MySQLPacketCodecTest {
             assertEquals("整个大包的所有字节应恰好被校验读完", 0, out.readableBytes());
 
             out.release();
-        } finally {
+        }
+        finally {
             sliceA.release();
             sliceB.release();
             channel.finish();

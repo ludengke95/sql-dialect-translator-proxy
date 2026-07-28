@@ -1,3 +1,4 @@
+
 package com.translator.proxy.metrics;
 
 import java.util.concurrent.Executors;
@@ -15,12 +16,14 @@ import io.prometheus.client.hotspot.DefaultExports;
 /**
  * 指标模块生命周期管理器。
  *
- * <p>用法：
+ * <p>
+ * 用法：
+ *
  * <pre>
- *   MetricsModule module = new MetricsModule();
- *   module.start(new MetricsConfig(true, 9090));
- *   // ... 应用运行期间，各组件直接使用静态指标类打点
- *   module.stop();
+ * MetricsModule module = new MetricsModule();
+ * module.start(new MetricsConfig(true, 9090));
+ * // ... 应用运行期间，各组件直接使用静态指标类打点
+ * module.stop();
  * </pre>
  */
 public class MetricsModule {

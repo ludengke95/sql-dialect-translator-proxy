@@ -1,12 +1,13 @@
+
 package com.translator.proxy.protocol.mysql.constant;
 
 /**
- * MySQL 协议 Capability Flags（客户端/服务端能力协商标志位）。
- * 参考 MySQL 官方文档：Protocol::CapabilityFlags
+ * MySQL 协议 Capability Flags（客户端/服务端能力协商标志位）。 参考 MySQL 官方文档：Protocol::CapabilityFlags
  */
 public final class CapabilityFlags {
 
-    private CapabilityFlags() {}
+    private CapabilityFlags() {
+    }
 
     public static final int CLIENT_LONG_PASSWORD = 0x00000001;
     public static final int CLIENT_FOUND_ROWS = 0x00000002;

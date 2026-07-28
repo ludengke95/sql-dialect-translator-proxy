@@ -1,3 +1,4 @@
+
 package com.translator.proxy.metrics;
 
 import io.prometheus.client.Counter;
@@ -8,7 +9,8 @@ import io.prometheus.client.Gauge;
  */
 public final class NettyMetrics {
 
-    private NettyMetrics() {}
+    private NettyMetrics() {
+    }
 
     /** Netty 读取字节总数 */
     public static final Counter BYTES_READ = Counter.build()

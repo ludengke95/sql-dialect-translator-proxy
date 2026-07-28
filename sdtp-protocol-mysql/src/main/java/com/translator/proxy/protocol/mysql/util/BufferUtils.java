@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.util;
 
 import java.nio.charset.StandardCharsets;
@@ -9,7 +10,8 @@ import io.netty.buffer.ByteBuf;
  */
 public final class BufferUtils {
 
-    private BufferUtils() {}
+    private BufferUtils() {
+    }
 
     /** NULL 值的协议标记字节 */
     public static final byte NULL_MARKER = (byte) 0xFB;
@@ -18,6 +20,7 @@ public final class BufferUtils {
 
     /**
      * 写入长度编码整数（Length-Encoded Integer）。
+     *
      * <pre>
      *   0-250:     1 byte
      *   251-65535: 0xFC + 2 bytes LE
@@ -28,13 +31,16 @@ public final class BufferUtils {
     public static void writeLengthEncodedInt(ByteBuf buf, long value) {
         if (value < 251) {
             buf.writeByte((int) value);
-        } else if (value < 65536) {
+        }
+        else if (value < 65536) {
             buf.writeByte(0xFC);
             buf.writeShortLE((int) value);
-        } else if (value < 16777216) {
+        }
+        else if (value < 16777216) {
             buf.writeByte(0xFD);
             buf.writeMediumLE((int) value);
-        } else {
+        }
+        else {
             buf.writeByte(0xFE);
             buf.writeLongLE(value);
         }
@@ -47,13 +53,17 @@ public final class BufferUtils {
         int first = buf.readUnsignedByte();
         if (first < 251) {
             return first;
-        } else if (first == 0xFC) {
+        }
+        else if (first == 0xFC) {
             return buf.readUnsignedShortLE();
-        } else if (first == 0xFD) {
+        }
+        else if (first == 0xFD) {
             return buf.readUnsignedMediumLE();
-        } else if (first == 0xFE) {
+        }
+        else if (first == 0xFE) {
             return buf.readLongLE();
-        } else {
+        }
+        else {
             // 0xFB = NULL, 0xFF = error
             return first;
         }
@@ -63,9 +73,12 @@ public final class BufferUtils {
      * 计算长度编码整数所占的字节数（只用于预分配，不能完全信任；写入时用 writeLengthEncodedInt）。
      */
     public static int lengthEncodedIntSize(long value) {
-        if (value < 251) return 1;
-        if (value < 65536) return 3;
-        if (value < 16777216) return 4;
+        if (value < 251)
+            return 1;
+        if (value < 65536)
+            return 3;
+        if (value < 16777216)
+            return 4;
         return 9;
     }
 

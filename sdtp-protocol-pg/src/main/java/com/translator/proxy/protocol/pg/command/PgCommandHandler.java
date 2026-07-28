@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.command;
 
 import java.nio.charset.StandardCharsets;
@@ -23,13 +24,14 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 /**
  * PostgreSQL 命令分发器 —— 处理 Simple Query 和 Extended Query。
  *
- * <p>支持的消息类型：
+ * <p>
+ * 支持的消息类型：
  * <ul>
- *   <li>Simple Query ('Q')</li>
- *   <li>Parse ('P') + Bind ('B') + Describe ('D') + Execute ('E') + Sync ('S')</li>
- *   <li>Close ('C')</li>
- *   <li>Flush ('H')</li>
- *   <li>Terminate ('X')</li>
+ * <li>Simple Query ('Q')</li>
+ * <li>Parse ('P') + Bind ('B') + Describe ('D') + Execute ('E') + Sync ('S')</li>
+ * <li>Close ('C')</li>
+ * <li>Flush ('H')</li>
+ * <li>Terminate ('X')</li>
  * </ul>
  */
 public class PgCommandHandler extends ChannelInboundHandlerAdapter {
@@ -49,7 +51,8 @@ public class PgCommandHandler extends ChannelInboundHandlerAdapter {
     /**
      * 构造命令分发器。
      *
-     * @param backendRouter 后端路由器，按会话 database 解析对应后端 QueryProcessor
+     * @param backendRouter
+     *            后端路由器，按会话 database 解析对应后端 QueryProcessor
      */
     public PgCommandHandler(BackendRouter backendRouter) {
         this.backendRouter = backendRouter;
@@ -67,42 +70,44 @@ public class PgCommandHandler extends ChannelInboundHandlerAdapter {
         try {
             byte type = raw.getType();
             switch (type) {
-                case 'Q':
-                    handleSimpleQuery(ctx, raw);
-                    break;
-                case 'P':
-                    handleParse(ctx, raw);
-                    break;
-                case 'B':
-                    handleBind(ctx, raw);
-                    break;
-                case 'D':
-                    handleDescribe(ctx, raw);
-                    break;
-                case 'E':
-                    handleExecute(ctx, raw);
-                    break;
-                case 'S':
-                    handleSync(ctx, raw);
-                    break;
-                case 'C':
-                    handleClose(ctx, raw);
-                    break;
-                case 'H':
-                    handleFlush(ctx, raw);
-                    break;
-                case 'X':
-                    handleTerminate(ctx, raw);
-                    break;
-                default:
-                    log.debug("Unknown PG message type: {}", (char) type);
-                    break;
+            case 'Q' :
+                handleSimpleQuery(ctx, raw);
+                break;
+            case 'P' :
+                handleParse(ctx, raw);
+                break;
+            case 'B' :
+                handleBind(ctx, raw);
+                break;
+            case 'D' :
+                handleDescribe(ctx, raw);
+                break;
+            case 'E' :
+                handleExecute(ctx, raw);
+                break;
+            case 'S' :
+                handleSync(ctx, raw);
+                break;
+            case 'C' :
+                handleClose(ctx, raw);
+                break;
+            case 'H' :
+                handleFlush(ctx, raw);
+                break;
+            case 'X' :
+                handleTerminate(ctx, raw);
+                break;
+            default :
+                log.debug("Unknown PG message type: {}", (char) type);
+                break;
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Error handling PG command", e);
             responseWriter.sendError(ctx, "ERROR", "58000", e.getMessage());
             responseWriter.sendReadyForQuery(ctx, PgWire.TXN_IDLE);
-        } finally {
+        }
+        finally {
             raw.release();
         }
     }
@@ -117,8 +122,7 @@ public class PgCommandHandler extends ChannelInboundHandlerAdapter {
         String sql = stripQueryTerminators(payload.toString(StandardCharsets.UTF_8));
         log.debug("PG Query: {}", sql);
 
-        FrontendSession session =
-                ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
+        FrontendSession session = ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
 
         if (sql == null || sql.trim().isEmpty()) {
             responseWriter.sendEmptyQuery(ctx);
@@ -212,15 +216,16 @@ public class PgCommandHandler extends ChannelInboundHandlerAdapter {
 
         if (sql != null) {
             sql = stripQueryTerminators(sql);
-            FrontendSession session =
-                    ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
+            FrontendSession session = ctx.channel().attr(SessionAttribute.SESSION_KEY).get();
 
             if (systemCatalog.canHandle(sql)) {
                 systemCatalog.handleQuery(ctx, sql, session);
-            } else {
+            }
+            else {
                 backendRouter.resolve(session).process(ctx, sql, session);
             }
-        } else {
+        }
+        else {
             // EmptyQuery
             ByteBuf response = ctx.alloc().buffer(1);
             response.writeByte('I');
@@ -242,7 +247,8 @@ public class PgCommandHandler extends ChannelInboundHandlerAdapter {
 
         if (closeType == 'S') {
             preparedStatements.remove(name);
-        } else if (closeType == 'P') {
+        }
+        else if (closeType == 'P') {
             portals.remove(name);
         }
 
@@ -267,8 +273,8 @@ public class PgCommandHandler extends ChannelInboundHandlerAdapter {
     /**
      * 归一化 PG 查询串：截断 NUL 终止符并去除尾随的分号/空白。
      *
-     * <p>PG 线协议以 NUL 结束查询串；尾随分号在开启 allowMultiQueries 的 MySQL 后端上
-     * 会被驱动按 ';' 拆分出空语句而报 "Query was empty"。分号仅为语句分隔符，去除安全。
+     * <p>
+     * PG 线协议以 NUL 结束查询串；尾随分号在开启 allowMultiQueries 的 MySQL 后端上 会被驱动按 ';' 拆分出空语句而报 "Query was empty"。分号仅为语句分隔符，去除安全。
      */
     private static String stripQueryTerminators(String s) {
         if (s == null) {

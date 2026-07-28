@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend;
 
 import java.util.Objects;
@@ -5,8 +6,8 @@ import java.util.Objects;
 /**
  * 后端数据库实例配置条目。
  *
- * <p>由 {@code ProxyBootstrap} 从 {@code ProxyConfig.TargetConfig} 转换而来，
- * 传入 {@link BackendPoolManager} 初始化连接池。
+ * <p>
+ * 由 {@code ProxyBootstrap} 从 {@code ProxyConfig.TargetConfig} 转换而来， 传入 {@link BackendPoolManager} 初始化连接池。
  */
 public class BackendEntry {
 
@@ -23,7 +24,8 @@ public class BackendEntry {
 
     private String identifierCase;
 
-    public BackendEntry() {}
+    public BackendEntry() {
+    }
 
     public BackendEntry(
             String name,
@@ -134,8 +136,10 @@ public class BackendEntry {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof BackendEntry)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof BackendEntry))
+            return false;
         BackendEntry that = (BackendEntry) o;
         return maxPoolSize == that.maxPoolSize
                 && minIdle == that.minIdle

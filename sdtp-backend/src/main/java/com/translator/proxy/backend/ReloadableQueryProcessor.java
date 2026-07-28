@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend;
 
 import java.util.Objects;
@@ -21,10 +22,11 @@ import io.netty.channel.ChannelHandlerContext;
 /**
  * 支持热 reload 的查询处理器包装器。
  *
- * <p>包装一个真实的 {@link QueryProcessor} delegate，
- * 通过状态机控制请求路由，实现后端配置变更时的优雅切换。
+ * <p>
+ * 包装一个真实的 {@link QueryProcessor} delegate， 通过状态机控制请求路由，实现后端配置变更时的优雅切换。
  *
  * <h3>状态机</h3>
+ *
  * <pre>
  *   ACTIVE ──drainAndClose()──▶ RELOADING ──activateNew()──▶ ACTIVE
  *      │                                                         │
@@ -33,13 +35,13 @@ import io.netty.channel.ChannelHandlerContext;
  *
  * <h3>各状态行为</h3>
  * <ul>
- *   <li><b>ACTIVE</b>：请求直接委托给内部 delegate 执行。</li>
- *   <li><b>RELOADING</b>：请求进入有界队列等待；队列满时返回
- *       MySQL ERR 1053（ER_SERVER_SHUTDOWN）。</li>
- *   <li><b>DRAINING</b>：直接拒绝请求，返回 ERR 1053。</li>
+ * <li><b>ACTIVE</b>：请求直接委托给内部 delegate 执行。</li>
+ * <li><b>RELOADING</b>：请求进入有界队列等待；队列满时返回 MySQL ERR 1053（ER_SERVER_SHUTDOWN）。</li>
+ * <li><b>DRAINING</b>：直接拒绝请求，返回 ERR 1053。</li>
  * </ul>
  *
- * <p>线程安全：使用 AtomicReference 管理状态，AtomicInteger 跟踪 in-flight 请求数。
+ * <p>
+ * 线程安全：使用 AtomicReference 管理状态，AtomicInteger 跟踪 in-flight 请求数。
  */
 public class ReloadableQueryProcessor implements QueryProcessor {
 
@@ -81,10 +83,14 @@ public class ReloadableQueryProcessor implements QueryProcessor {
     /**
      * 创建包装器。
      *
-     * @param backendName   后端名称
-     * @param delegate      被包装的真实处理器
-     * @param queueCapacity reload 期间请求队列容量
-     * @param drainTimeoutMs drain 超时（毫秒）
+     * @param backendName
+     *            后端名称
+     * @param delegate
+     *            被包装的真实处理器
+     * @param queueCapacity
+     *            reload 期间请求队列容量
+     * @param drainTimeoutMs
+     *            drain 超时（毫秒）
      */
     public ReloadableQueryProcessor(
             String backendName, QueryProcessor delegate, int queueCapacity, int drainTimeoutMs) {
@@ -102,20 +108,21 @@ public class ReloadableQueryProcessor implements QueryProcessor {
         try {
             State s = state.get();
             switch (s) {
-                case ACTIVE:
-                    delegate.process(ctx, sql, session);
-                    break;
-                case RELOADING:
-                    enqueue(ctx, sql, session);
-                    break;
-                case DRAINING:
-                    writeError(ctx, "Server shutdown in progress, backend '" + backendName + "' is being removed");
-                    break;
-                default:
-                    writeError(ctx, "Unknown backend state for '" + backendName + "'");
-                    break;
+            case ACTIVE :
+                delegate.process(ctx, sql, session);
+                break;
+            case RELOADING :
+                enqueue(ctx, sql, session);
+                break;
+            case DRAINING :
+                writeError(ctx, "Server shutdown in progress, backend '" + backendName + "' is being removed");
+                break;
+            default :
+                writeError(ctx, "Unknown backend state for '" + backendName + "'");
+                break;
             }
-        } finally {
+        }
+        finally {
             inFlightCount.decrementAndGet();
         }
     }
@@ -157,7 +164,8 @@ public class ReloadableQueryProcessor implements QueryProcessor {
     /**
      * 进入 RELOADING 状态，等待 in-flight 请求完成，关闭旧 delegate。
      *
-     * <p>调用后必须紧接着调用 {@link #activateNew(QueryProcessor)}。
+     * <p>
+     * 调用后必须紧接着调用 {@link #activateNew(QueryProcessor)}。
      *
      * @return true 表示 drain 成功完成；false 表示超时（旧 delegate 仍被强行关闭）
      */
@@ -178,7 +186,8 @@ public class ReloadableQueryProcessor implements QueryProcessor {
             }
             try {
                 Thread.sleep(50);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.warn("Backend '{}': drain interrupted", backendName);
                 break;
@@ -205,10 +214,10 @@ public class ReloadableQueryProcessor implements QueryProcessor {
     }
 
     /**
-     * 设置新的 delegate 并切换回 ACTIVE 状态，
-     * 然后逐一处理队列中等待的请求。
+     * 设置新的 delegate 并切换回 ACTIVE 状态， 然后逐一处理队列中等待的请求。
      *
-     * @param newDelegate 新创建的查询处理器
+     * @param newDelegate
+     *            新创建的查询处理器
      */
     public void activateNew(QueryProcessor newDelegate) {
         Objects.requireNonNull(newDelegate, "newDelegate must not be null");
@@ -222,10 +231,12 @@ public class ReloadableQueryProcessor implements QueryProcessor {
             inFlightCount.incrementAndGet();
             try {
                 newDelegate.process(pr.ctx, pr.sql, pr.session);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 log.error("Backend '{}': error processing queued request: {}", backendName, e.getMessage());
                 writeError(pr.ctx, "Backend reload completed but request failed: " + e.getMessage());
-            } finally {
+            }
+            finally {
                 inFlightCount.decrementAndGet();
             }
         }
@@ -233,8 +244,7 @@ public class ReloadableQueryProcessor implements QueryProcessor {
     }
 
     /**
-     * 标记为 DRAINING，拒绝所有新请求，供后端被移除时使用。
-     * 调用者应在之后调用 {@link #close()} 释放资源。
+     * 标记为 DRAINING，拒绝所有新请求，供后端被移除时使用。 调用者应在之后调用 {@link #close()} 释放资源。
      */
     public void markDraining() {
         state.set(State.DRAINING);
@@ -270,7 +280,8 @@ public class ReloadableQueryProcessor implements QueryProcessor {
             ReloadMetrics.recordQueueRejection(backendName, "full");
             writeError(
                     ctx, "Server shutdown in progress, backend '" + backendName + "' is reloading, please retry later");
-        } else {
+        }
+        else {
             log.debug("Backend '{}': request queued (queue size={})", backendName, pendingQueue.size());
         }
     }
@@ -300,7 +311,8 @@ public class ReloadableQueryProcessor implements QueryProcessor {
         try {
             ByteBuf err = MySQLResponseWriter.buildErrPacket(ctx.alloc(), ERR_SERVER_SHUTDOWN, SQL_STATE, message);
             ctx.writeAndFlush(new MySQLPacketEncoder.OutgoingPacket(err, (byte) 1));
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Backend '{}': failed to write error packet", backendName, e);
         }
     }

@@ -1,3 +1,4 @@
+
 package com.translator.proxy.core.handler;
 
 import org.slf4j.Logger;
@@ -25,7 +26,8 @@ public class NettyMetricsHandler extends ChannelDuplexHandler {
                 log.debug("NettyMetricsHandler read {} bytes", bytes);
             }
             NettyMetrics.recordBytesRead(bytes);
-        } else {
+        }
+        else {
             if (log.isDebugEnabled()) {
                 log.debug(
                         "NettyMetricsHandler read msg of non-ByteBuf type: {}",
@@ -43,7 +45,8 @@ public class NettyMetricsHandler extends ChannelDuplexHandler {
                 log.debug("NettyMetricsHandler wrote {} bytes", bytes);
             }
             NettyMetrics.recordBytesWritten(bytes);
-        } else {
+        }
+        else {
             if (log.isDebugEnabled()) {
                 log.debug(
                         "NettyMetricsHandler wrote msg of non-ByteBuf type: {}",

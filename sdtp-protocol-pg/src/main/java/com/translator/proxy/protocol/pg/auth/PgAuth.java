@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.auth;
 
 import java.nio.charset.StandardCharsets;
@@ -7,24 +8,30 @@ import java.security.NoSuchAlgorithmException;
 /**
  * PostgreSQL MD5 认证算法。
  *
- * <p>PG MD5 认证：
+ * <p>
+ * PG MD5 认证：
  * <ol>
- *   <li>服务端发送 AuthenticationMD5Password 消息，携带 4 字节随机 salt</li>
- *   <li>客户端计算：md5(md5(password + username) + salt) 的十六进制表示</li>
- *   <li>服务端同样计算并比对</li>
+ * <li>服务端发送 AuthenticationMD5Password 消息，携带 4 字节随机 salt</li>
+ * <li>客户端计算：md5(md5(password + username) + salt) 的十六进制表示</li>
+ * <li>服务端同样计算并比对</li>
  * </ol>
  */
 public final class PgAuth {
 
-    private PgAuth() {}
+    private PgAuth() {
+    }
 
     /**
      * 验证客户端发来的 MD5 密码。
      *
-     * @param username      用户名
-     * @param password      明文密码
-     * @param salt          4 字节随机 salt
-     * @param clientResponse 客户端发来的十六进制字符串（"md5" + 32 hex）
+     * @param username
+     *            用户名
+     * @param password
+     *            明文密码
+     * @param salt
+     *            4 字节随机 salt
+     * @param clientResponse
+     *            客户端发来的十六进制字符串（"md5" + 32 hex）
      * @return true 如果验证通过
      */
     public static boolean verify(String username, String password, byte[] salt, String clientResponse) {
@@ -47,12 +54,15 @@ public final class PgAuth {
      * 计算 MD5 密码。
      *
      * <pre>
-     *   token = md5(md5(password + username) + salt)
+     * token = md5(md5(password + username) + salt)
      * </pre>
      *
-     * @param username 用户名
-     * @param password 明文密码
-     * @param salt     4 字节随机 salt
+     * @param username
+     *            用户名
+     * @param password
+     *            明文密码
+     * @param salt
+     *            4 字节随机 salt
      * @return 32 字符十六进制字符串
      */
     public static String encode(String username, String password, byte[] salt) {
@@ -71,7 +81,8 @@ public final class PgAuth {
             byte[] outer = md5.digest(outerInput);
 
             return bytesToHex(outer);
-        } catch (NoSuchAlgorithmException e) {
+        }
+        catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("MD5 algorithm not available", e);
         }
     }

@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.result;
 
 import java.nio.charset.StandardCharsets;
@@ -18,7 +19,9 @@ import io.netty.channel.ChannelHandlerContext;
 /**
  * PostgreSQL 响应写入器 —— 将 JDBC ResultSet 编码为 PG 协议消息。
  *
- * <p>实现 {@link ResponseWriter} 接口，将结果编码为：
+ * <p>
+ * 实现 {@link ResponseWriter} 接口，将结果编码为：
+ *
  * <pre>
  *   RowDescription → N*DataRow → CommandComplete → ReadyForQuery
  * </pre>
@@ -43,9 +46,11 @@ public class PgResponseWriter implements ResponseWriter {
         String tag = "";
         if (info != null && !info.isEmpty()) {
             tag = info;
-        } else if (affectedRows >= 0) {
+        }
+        else if (affectedRows >= 0) {
             tag = "OK " + affectedRows;
-        } else {
+        }
+        else {
             tag = "OK";
         }
         sendCommandComplete(ctx, tag);
@@ -179,7 +184,8 @@ public class PgResponseWriter implements ResponseWriter {
             String value = rs.getString(i);
             if (rs.wasNull() || value == null) {
                 payload.writeInt(-1); // NULL
-            } else {
+            }
+            else {
                 byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                 payload.writeInt(bytes.length);
                 payload.writeBytes(bytes);

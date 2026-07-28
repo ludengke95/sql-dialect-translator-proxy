@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.catalog;
 
 import static org.junit.Assert.*;
@@ -17,13 +18,13 @@ import io.netty.channel.embedded.EmbeddedChannel;
 /**
  * SystemVariableInterceptor 内联后的行为级回归测试。
  *
- * <p>覆盖 {@link MySQLSystemCatalogProvider} 的公开 API：
- * {@code canHandle}/{@code isSetStatement}/{@code extractUseDatabase}/
- * {@code getVariables}/{@code setSystemVariable}，以及通过 {@code EmbeddedChannel}
- * 轻量验证 {@code handleQuery} 的 Netty 写入路径。
+ * <p>
+ * 覆盖 {@link MySQLSystemCatalogProvider} 的公开 API： {@code canHandle}/{@code isSetStatement}/{@code extractUseDatabase}/
+ * {@code getVariables}/{@code setSystemVariable}，以及通过 {@code EmbeddedChannel} 轻量验证 {@code handleQuery} 的 Netty 写入路径。
  *
- * <p>注意：变量表为进程级 static 单例，{@code setSystemVariable} 会全局生效，
- * 因此在 {@link #tearDown()} 中还原 {@code max_allowed_packet} 初始值，避免污染其他用例。
+ * <p>
+ * 注意：变量表为进程级 static 单例，{@code setSystemVariable} 会全局生效， 因此在 {@link #tearDown()} 中还原 {@code max_allowed_packet}
+ * 初始值，避免污染其他用例。
  */
 public class MySQLSystemCatalogProviderTest {
 
@@ -152,7 +153,8 @@ public class MySQLSystemCatalogProviderTest {
             first.put("snapshot_test_key", "x");
             first.clear();
             fail("getVariables() 返回的快照应为不可修改副本");
-        } catch (UnsupportedOperationException expected) {
+        }
+        catch (UnsupportedOperationException expected) {
             // 期望：返回的是不可修改快照，无法从外部污染源
         }
 
@@ -178,9 +180,8 @@ public class MySQLSystemCatalogProviderTest {
     // ==================== handleQuery（Netty 写入路径，EmbeddedChannel 轻量验证） ====================
 
     /**
-     * 获取一个真实的 {@link ChannelHandlerContext}：往 {@link EmbeddedChannel} 塞一个
-     * 无操作的入站 handler，取其 context。该 context 的 {@code write} 会沿 pipeline 反向
-     * 抵达 head → unsafe，最终写入 EmbeddedChannel 的 outbound 缓冲（可被 {@code readOutbound} 读取）。
+     * 获取一个真实的 {@link ChannelHandlerContext}：往 {@link EmbeddedChannel} 塞一个 无操作的入站 handler，取其 context。该 context 的
+     * {@code write} 会沿 pipeline 反向 抵达 head → unsafe，最终写入 EmbeddedChannel 的 outbound 缓冲（可被 {@code readOutbound} 读取）。
      */
     private ChannelHandlerContext newTestContext(EmbeddedChannel channel, ChannelInboundHandlerAdapter sink) {
         return channel.pipeline().context(sink);

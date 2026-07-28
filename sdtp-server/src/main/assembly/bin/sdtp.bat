@@ -1,12 +1,12 @@
 @echo off
 REM ============================================================================
-REM SDT Proxy Startup Script (Windows)
+REM SDT Proxy Management Script (Windows)
 REM
 REM Usage:
-REM   start.bat              Foreground (double-click to run)
-REM   start.bat start         Background
-REM   start.bat stop          Stop
-REM   start.bat status        Status
+REM   sdtp.bat              Foreground (double-click to run)
+REM   sdtp.bat start        Background
+REM   sdtp.bat stop         Stop
+REM   sdtp.bat status       Status
 REM ============================================================================
 
 setlocal enabledelayedexpansion

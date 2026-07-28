@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.codec;
 
 import io.netty.buffer.ByteBuf;
@@ -5,8 +6,8 @@ import io.netty.buffer.ByteBuf;
 /**
  * PG 消息封装 —— 编码后的完整协议消息。
  *
- * <p>包含消息类型码（1 字节）和 payload。
- * 编码器负责添加 4 字节长度前缀。
+ * <p>
+ * 包含消息类型码（1 字节）和 payload。 编码器负责添加 4 字节长度前缀。
  */
 public class PgMessage {
 

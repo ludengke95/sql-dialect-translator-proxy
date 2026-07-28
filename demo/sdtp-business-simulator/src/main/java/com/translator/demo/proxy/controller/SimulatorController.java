@@ -1,3 +1,4 @@
+
 package com.translator.demo.proxy.controller;
 
 import java.sql.Connection;
@@ -109,14 +110,16 @@ public class SimulatorController {
 
     // 辅助方法：将参数填充进 SQL 中，以便展示完整的 MySQL SQL
     private String fillParams(String sql, Object... params) {
-        if (params == null || params.length == 0) return sql;
+        if (params == null || params.length == 0)
+            return sql;
         String result = sql;
         for (Object p : params) {
             String valStr = "NULL";
             if (p != null) {
                 if (p instanceof String) {
                     valStr = "'" + p.toString().replace("'", "''") + "'";
-                } else {
+                }
+                else {
                     valStr = p.toString();
                 }
             }
@@ -133,14 +136,16 @@ public class SimulatorController {
                 || trimmed.startsWith("-- direct")
                 || trimmed.startsWith("/* sdt:direct */")) {
             pgSql = mysqlSql.replace("/* sdtp:direct */", "")
-                            .replace("-- direct", "")
-                            .replace("/* sdt:direct */", "")
-                            .trim()
+                    .replace("-- direct", "")
+                    .replace("/* sdt:direct */", "")
+                    .trim()
                     + " (SQL Bypass直通模式)";
-        } else {
+        }
+        else {
             try {
                 pgSql = SqlTranslator.translate(mysqlSql, DialectType.MYSQL, DialectType.POSTGRESQL);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 pgSql = "[本地翻译失败] " + e.getMessage();
             }
         }
@@ -206,14 +211,13 @@ public class SimulatorController {
             recordAudit(createOrders, System.currentTimeMillis() - start, true, null, 0);
 
             // 4. INSERT 初始商品数据 (MySQL 语法)
-            String insertTpl =
-                    "INSERT INTO `products` (`id`, `name`, `price`, `stock`, `version`, `description`) VALUES (?, ?, ?, ?, 0, ?)";
+            String insertTpl = "INSERT INTO `products` (`id`, `name`, `price`, `stock`, `version`, `description`) VALUES (?, ?, ?, ?, 0, ?)";
 
             Object[][] products = {
-                {1, "iPhone 15 Pro", 7999.00, 100, "钛金属设计，A17 Pro 芯片"},
-                {2, "MacBook Air M3", 8999.00, 50, "超轻薄设计，强劲 M3 芯片"},
-                {3, "iPad Pro", 6199.00, 80, "Ultra Retina XDR 屏幕"},
-                {4, "Apple Watch S9", 2999.00, 120, "全新手势操作，健康监测"}
+                    {1, "iPhone 15 Pro", 7999.00, 100, "钛金属设计，A17 Pro 芯片"},
+                    {2, "MacBook Air M3", 8999.00, 50, "超轻薄设计，强劲 M3 芯片"},
+                    {3, "iPad Pro", 6199.00, 80, "Ultra Retina XDR 屏幕"},
+                    {4, "Apple Watch S9", 2999.00, 120, "全新手势操作，健康监测"}
             };
 
             for (Object[] prod : products) {
@@ -227,7 +231,8 @@ public class SimulatorController {
                     pstmt.setString(5, (String) prod[4]);
                     pstmt.executeUpdate();
                     recordAudit(filledSql, System.currentTimeMillis() - start, true, null, 1);
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     recordAudit(filledSql, System.currentTimeMillis() - start, false, e.getMessage(), 0);
                     throw e;
                 }
@@ -243,7 +248,8 @@ public class SimulatorController {
             result.put("durationMs", System.currentTimeMillis() - totalStart);
             return ResponseEntity.ok(result);
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Database initialization failed", e);
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("success", false);
@@ -279,7 +285,8 @@ public class SimulatorController {
                     if ("pessimistic".equalsIgnoreCase(lockMode)) {
                         // 悲观行锁 (MySQL FOR UPDATE 语法)
                         selectSql = "SELECT id, name, price, stock, version FROM products WHERE id = ? FOR UPDATE";
-                    } else {
+                    }
+                    else {
                         // 乐观锁，先查询不加锁
                         selectSql = "SELECT id, name, price, stock, version FROM products WHERE id = ?";
                     }
@@ -293,12 +300,14 @@ public class SimulatorController {
                                 price = rs.getDouble("price");
                                 stock = rs.getInt("stock");
                                 version = rs.getInt("version");
-                            } else {
+                            }
+                            else {
                                 throw new RuntimeException("Product not found with ID: " + productId);
                             }
                         }
                         recordAudit(selectFilled, System.currentTimeMillis() - start, true, null, 1);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e) {
                         recordAudit(selectFilled, System.currentTimeMillis() - start, false, e.getMessage(), 0);
                         throw e;
                     }
@@ -323,14 +332,15 @@ public class SimulatorController {
                             pstmt.setInt(2, productId);
                             rowsUpdated = pstmt.executeUpdate();
                             recordAudit(updateFilled, System.currentTimeMillis() - start, true, null, rowsUpdated);
-                        } catch (Exception e) {
+                        }
+                        catch (Exception e) {
                             recordAudit(updateFilled, System.currentTimeMillis() - start, false, e.getMessage(), 0);
                             throw e;
                         }
-                    } else {
+                    }
+                    else {
                         // 乐观锁带版本号更新 (MySQL version 校验)
-                        updateSql =
-                                "UPDATE products SET stock = stock - ?, version = version + 1 WHERE id = ? AND version = ? AND stock >= ?";
+                        updateSql = "UPDATE products SET stock = stock - ?, version = version + 1 WHERE id = ? AND version = ? AND stock >= ?";
                         updateFilled = fillParams(updateSql, quantity, productId, version, quantity);
                         start = System.currentTimeMillis();
                         try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
@@ -340,7 +350,8 @@ public class SimulatorController {
                             pstmt.setInt(4, quantity);
                             rowsUpdated = pstmt.executeUpdate();
                             recordAudit(updateFilled, System.currentTimeMillis() - start, true, null, rowsUpdated);
-                        } catch (Exception e) {
+                        }
+                        catch (Exception e) {
                             recordAudit(updateFilled, System.currentTimeMillis() - start, false, e.getMessage(), 0);
                             throw e;
                         }
@@ -353,9 +364,8 @@ public class SimulatorController {
 
                     // 4. 创建订单 (MySQL NOW() 函数，反引号已剥离)
                     double totalAmount = price * quantity;
-                    String insertSql =
-                            "INSERT INTO orders (order_id, product_id, quantity, total_amount, buyer_name, status, pay_time, created_at)\n"
-                                    + "VALUES (?, ?, ?, ?, ?, 'PAID', NOW(), NOW())";
+                    String insertSql = "INSERT INTO orders (order_id, product_id, quantity, total_amount, buyer_name, status, pay_time, created_at)\n"
+                            + "VALUES (?, ?, ?, ?, ?, 'PAID', NOW(), NOW())";
                     String insertFilled = fillParams(insertSql, orderId, productId, quantity, totalAmount, buyer);
                     start = System.currentTimeMillis();
                     try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
@@ -366,7 +376,8 @@ public class SimulatorController {
                         pstmt.setString(5, buyer);
                         pstmt.executeUpdate();
                         recordAudit(insertFilled, System.currentTimeMillis() - start, true, null, 1);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e) {
                         recordAudit(insertFilled, System.currentTimeMillis() - start, false, e.getMessage(), 0);
                         throw e;
                     }
@@ -388,17 +399,20 @@ public class SimulatorController {
                     response.put("durationMs", System.currentTimeMillis() - totalStart);
                     return ResponseEntity.ok(response);
 
-                } catch (ConcurrentModificationException cme) {
+                }
+                catch (ConcurrentModificationException cme) {
                     conn.rollback(); // 发生冲突，事务回滚并重试
                     lastException = cme;
                     if (attempt < maxRetries) {
                         Thread.sleep(50); // 短暂休眠后重试
                     }
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     conn.rollback(); // 其他业务异常直接回滚，不重试
                     throw e;
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 lastException = e;
                 if (!"乐观锁版本冲突，商品已被其他事务更新。".equals(e.getMessage())) {
                     // 非乐观锁重试冲突，直接跳出不重试
@@ -444,7 +458,8 @@ public class SimulatorController {
                     productsList.add(row);
                 }
                 recordAudit(queryProducts, System.currentTimeMillis() - start, true, null, productsList.size());
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 recordAudit(queryProducts, System.currentTimeMillis() - start, false, e.getMessage(), 0);
                 throw e;
             }
@@ -475,7 +490,8 @@ public class SimulatorController {
                     ordersList.add(row);
                 }
                 recordAudit(queryOrders, System.currentTimeMillis() - start, true, null, ordersList.size());
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 recordAudit(queryOrders, System.currentTimeMillis() - start, false, e.getMessage(), 0);
                 throw e;
             }
@@ -502,7 +518,8 @@ public class SimulatorController {
             result.put("avgSqlDurationMs", count > 0 ? Math.round((avgDuration / count) * 10.0) / 10.0 : 0.0);
 
             return ResponseEntity.ok(result);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("success", false);
             error.put("error", e.getMessage());
@@ -546,7 +563,8 @@ public class SimulatorController {
                     recordAudit(sql, duration, true, null, list.size());
                     return ResponseEntity.ok(list);
                 }
-            } else {
+            }
+            else {
                 int updateCount = stmt.getUpdateCount();
                 recordAudit(sql, duration, true, null, updateCount);
 
@@ -555,7 +573,8 @@ public class SimulatorController {
                 result.put("durationMs", duration);
                 return ResponseEntity.ok(result);
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             long duration = System.currentTimeMillis() - start;
             recordAudit(sql, duration, false, e.getMessage(), 0);
 
@@ -589,8 +608,8 @@ public class SimulatorController {
                 Statement stmt = conn.createStatement()) {
 
             // 1. 创建大包临时表 (直通建表以免 Calcite DDL 异常)
-            String createTableSql =
-                    "/* sdtp:direct */ CREATE TABLE " + tableName + " (id INT PRIMARY KEY, content TEXT)";
+            String createTableSql = "/* sdtp:direct */ CREATE TABLE " + tableName
+                    + " (id INT PRIMARY KEY, content TEXT)";
             stmt.execute(createTableSql);
             recordAudit(createTableSql, 0, true, null, 0);
 
@@ -651,13 +670,15 @@ public class SimulatorController {
             response.put("readLength", readLen);
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Large packet E2E test failed", e);
             // 兜底清理
             try (Connection conn = dataSource.getConnection();
                     Statement stmt = conn.createStatement()) {
                 stmt.execute("/* sdtp:direct */ DROP TABLE IF EXISTS " + tableName);
-            } catch (Exception ignored) {
+            }
+            catch (Exception ignored) {
             }
 
             Map<String, Object> error = new LinkedHashMap<>();

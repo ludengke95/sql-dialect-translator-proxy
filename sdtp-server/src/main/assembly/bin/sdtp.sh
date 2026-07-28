@@ -1,11 +1,11 @@
 #!/bin/bash
-# SDT Proxy 启动脚本
+# SDT Proxy 服务管理脚本
 # 用法:
-#   ./start.sh           前台运行（Docker 默认）
-#   ./start.sh start     后台运行
-#   ./start.sh start-fg  前台运行
-#   ./start.sh stop      停止
-#   ./start.sh restart   重启
+#   ./sdtp.sh           前台运行（Docker 默认）
+#   ./sdtp.sh start     后台运行
+#   ./sdtp.sh start-fg  前台运行
+#   ./sdtp.sh stop      停止
+#   ./sdtp.sh restart   重启
 
 set -e
 
@@ -45,7 +45,7 @@ stop() {
     if [ -f "$PID_FILE" ]; then
         PID=$(cat "$PID_FILE")
         echo "Stopping SDT Proxy (PID: $PID)..."
-        kill "$PID" 2>/dev/null || true
+        kill "$PID" 2>/devnull || true
         rm -f "$PID_FILE"
         echo "Stopped."
     else

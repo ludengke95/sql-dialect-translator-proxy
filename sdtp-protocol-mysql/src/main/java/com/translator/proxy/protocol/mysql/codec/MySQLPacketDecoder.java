@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.mysql.codec;
 
 import java.util.List;
@@ -14,7 +15,9 @@ import io.netty.handler.codec.DecoderException;
 /**
  * MySQL 协议拆包器。
  *
- * <p>MySQL 线协议包格式（4 字节头）：
+ * <p>
+ * MySQL 线协议包格式（4 字节头）：
+ *
  * <pre>
  *   ┌──────────────┬──────────────┬───────────────────┐
  *   │ payload_len  │ sequence_id  │     payload       │
@@ -22,8 +25,8 @@ import io.netty.handler.codec.DecoderException;
  *   └──────────────┴──────────────┴───────────────────┘
  * </pre>
  *
- * <p>注意：如果一个 MySQL 包超过 16MB（0xFFFFFF），会被拆成多个子包（splitting），
- * 每个子包有独立的 4 字节头。此处通过 CompositeByteBuf 实现分包的零拷贝重组。
+ * <p>
+ * 注意：如果一个 MySQL 包超过 16MB（0xFFFFFF），会被拆成多个子包（splitting）， 每个子包有独立的 4 字节头。此处通过 CompositeByteBuf 实现分包的零拷贝重组。
  */
 public class MySQLPacketDecoder extends ByteToMessageDecoder {
 
@@ -82,14 +85,16 @@ public class MySQLPacketDecoder extends ByteToMessageDecoder {
             if (payloadLength < MAX_PAYLOAD_LENGTH) {
                 // 普通小包（未分片）：直接向下分发
                 out.add(new RawMySQLPacket(payload, sequenceId));
-            } else {
+            }
+            else {
                 // 大包的第一个分片到达：初始化 CompositeByteBuf 并记录初始序列号
                 cumulation = ctx.alloc().compositeBuffer();
                 cumulation.addComponent(true, payload);
                 initialSequenceId = sequenceId;
                 log.debug("First fragment of large packet arrived. seq={}", sequenceId);
             }
-        } else {
+        }
+        else {
             // 后续分片到达：验证序列号连续性，并拼接
             int expectedSeq = (initialSequenceId + cumulation.numComponents()) & 0xFF;
             if ((sequenceId & 0xFF) != expectedSeq) {
@@ -117,7 +122,8 @@ public class MySQLPacketDecoder extends ByteToMessageDecoder {
                 out.add(new RawMySQLPacket(cumulation, sequenceId));
                 cumulation = null;
                 initialSequenceId = -1;
-            } else {
+            }
+            else {
                 log.debug(
                         "Received subsequent fragment of large packet. Current total size={}",
                         cumulation.readableBytes());
@@ -140,8 +146,7 @@ public class MySQLPacketDecoder extends ByteToMessageDecoder {
     }
 
     /**
-     * 解码后的原始包（payload + sequenceId）。
-     * 下游 Handler 根据 command 类型进一步解析具体报文。
+     * 解码后的原始包（payload + sequenceId）。 下游 Handler 根据 command 类型进一步解析具体报文。
      */
     public static class RawMySQLPacket {
         private final ByteBuf payload;

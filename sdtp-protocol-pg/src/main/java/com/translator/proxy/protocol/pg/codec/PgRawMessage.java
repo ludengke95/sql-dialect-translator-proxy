@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.pg.codec;
 
 import io.netty.buffer.ByteBuf;
@@ -5,8 +6,8 @@ import io.netty.buffer.ByteBuf;
 /**
  * PG 原始消息 —— 解码中间产物。
  *
- * <p>在 Startup 阶段（无消息类型码），type 为 0；
- * 在 Normal 阶段，type 为消息类型码。
+ * <p>
+ * 在 Startup 阶段（无消息类型码），type 为 0； 在 Normal 阶段，type 为消息类型码。
  */
 public class PgRawMessage {
 

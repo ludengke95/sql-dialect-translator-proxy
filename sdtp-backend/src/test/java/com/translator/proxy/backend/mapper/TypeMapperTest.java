@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend.mapper;
 
 import static org.junit.Assert.*;

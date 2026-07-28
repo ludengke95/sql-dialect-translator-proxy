@@ -25,7 +25,7 @@
             <lineEnding>unix</lineEnding>
             <filtered>true</filtered>
             <includes>
-                <include>start.sh</include>
+                <include>sdtp.sh</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -35,7 +35,7 @@
             <lineEnding>windows</lineEnding>
             <filtered>true</filtered>
             <includes>
-                <include>start.bat</include>
+                <include>sdtp.bat</include>
             </includes>
         </fileSet>
 

@@ -1,3 +1,4 @@
+
 package com.translator.proxy.protocol.frontend;
 
 import com.translator.proxy.core.session.FrontendSession;
@@ -12,7 +13,8 @@ public interface SessionStatementHandler {
     /**
      * 判断是否能处理该 SQL。
      *
-     * @param sql 原始 SQL
+     * @param sql
+     *            原始 SQL
      * @return true 如果可以处理
      */
     boolean canHandle(String sql);
@@ -20,9 +22,12 @@ public interface SessionStatementHandler {
     /**
      * 处理会话级语句。
      *
-     * @param ctx     Netty 上下文
-     * @param sql     原始 SQL
-     * @param session 当前会话
+     * @param ctx
+     *            Netty 上下文
+     * @param sql
+     *            原始 SQL
+     * @param session
+     *            当前会话
      */
     void handle(ChannelHandlerContext ctx, String sql, FrontendSession session);
 }

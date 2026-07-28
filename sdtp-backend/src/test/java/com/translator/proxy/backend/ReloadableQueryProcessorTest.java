@@ -1,3 +1,4 @@
+
 package com.translator.proxy.backend;
 
 import static org.junit.Assert.*;
@@ -88,7 +89,8 @@ public class ReloadableQueryProcessorTest {
         // 我们验证队列大小不变
         try {
             reloadable.process(null, "overflow", null);
-        } catch (NullPointerException expected) {
+        }
+        catch (NullPointerException expected) {
             // null ctx 会触发 NPE（错误写入需要 ctx），正常
         }
 
@@ -106,7 +108,8 @@ public class ReloadableQueryProcessorTest {
         // 请求应被拒绝（队列不增长）
         try {
             reloadable.process(null, "SELECT 1", null);
-        } catch (NullPointerException expected) {
+        }
+        catch (NullPointerException expected) {
             // null ctx 触发 NPE
         }
         assertEquals("Queue should remain empty in DRAINING", 0, reloadable.getQueueSize());
@@ -186,15 +189,16 @@ public class ReloadableQueryProcessorTest {
 
         for (int i = 0; i < threadCount; i++) {
             new Thread(() -> {
-                        try {
-                            startLatch.await();
-                        } catch (InterruptedException ignored) {
-                        }
-                        for (int j = 0; j < requestsPerThread; j++) {
-                            reloadable.process(null, "CONCURRENT", null);
-                        }
-                        doneLatch.countDown();
-                    })
+                try {
+                    startLatch.await();
+                }
+                catch (InterruptedException ignored) {
+                }
+                for (int j = 0; j < requestsPerThread; j++) {
+                    reloadable.process(null, "CONCURRENT", null);
+                }
+                doneLatch.countDown();
+            })
                     .start();
         }
 
@@ -245,11 +249,13 @@ public class ReloadableQueryProcessorTest {
         public void process(ChannelHandlerContext ctx, String sql, FrontendSession session) {
             try {
                 Thread.sleep(delayMs);
-            } catch (InterruptedException ignored) {
+            }
+            catch (InterruptedException ignored) {
             }
         }
 
         @Override
-        public void close() {}
+        public void close() {
+        }
     }
 }

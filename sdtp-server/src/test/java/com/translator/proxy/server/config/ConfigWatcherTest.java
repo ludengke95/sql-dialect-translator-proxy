@@ -1,3 +1,4 @@
+
 package com.translator.proxy.server.config;
 
 import static org.junit.Assert.*;
@@ -129,8 +130,8 @@ public class ConfigWatcherTest {
      */
     @Test
     public void testDiffNewBackend() {
-        List<ProxyConfig.TargetConfig> oldList =
-                Arrays.asList(createTargetConfig("db1", "POSTGRESQL", "jdbc:pg://host1/db1"));
+        List<ProxyConfig.TargetConfig> oldList = Arrays
+                .asList(createTargetConfig("db1", "POSTGRESQL", "jdbc:pg://host1/db1"));
         List<ProxyConfig.TargetConfig> newList = Arrays.asList(
                 createTargetConfig("db1", "POSTGRESQL", "jdbc:pg://host1/db1"),
                 createTargetConfig("db2", "MYSQL", "jdbc:mysql://host2/db2"));
@@ -150,8 +151,8 @@ public class ConfigWatcherTest {
         List<ProxyConfig.TargetConfig> oldList = Arrays.asList(
                 createTargetConfig("db1", "POSTGRESQL", "jdbc:pg://host1/db1"),
                 createTargetConfig("db2", "MYSQL", "jdbc:mysql://host2/db2"));
-        List<ProxyConfig.TargetConfig> newList =
-                Arrays.asList(createTargetConfig("db1", "POSTGRESQL", "jdbc:pg://host1/db1"));
+        List<ProxyConfig.TargetConfig> newList = Arrays
+                .asList(createTargetConfig("db1", "POSTGRESQL", "jdbc:pg://host1/db1"));
 
         // db2 在 old 中存在，new 中不存在 → 应删除
         assertTrue("db2 should exist in old", findByPath(oldList, "db2"));

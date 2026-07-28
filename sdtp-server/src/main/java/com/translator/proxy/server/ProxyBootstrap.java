@@ -1,3 +1,4 @@
+
 package com.translator.proxy.server;
 
 import java.util.ArrayList;
@@ -32,12 +33,12 @@ import io.netty.handler.timeout.IdleStateHandler;
 /**
  * SDT Proxy 启动引导类（SPI 多协议版）。
  *
- * <p>启动时通过 {@link FrontendProtocols} SPI 加载前端协议，
- * 初始化 {@link BackendPoolManager} 管理多个后端连接池，
- * 将 {@link BackendRouter} 注入命令处理器实现按数据库名路由。
+ * <p>
+ * 启动时通过 {@link FrontendProtocols} SPI 加载前端协议， 初始化 {@link BackendPoolManager} 管理多个后端连接池， 将 {@link BackendRouter}
+ * 注入命令处理器实现按数据库名路由。
  *
- * <p>启动后通过 {@link ConfigWatcher} 监听配置文件变更，
- * 实现 backends 列表的热更新。
+ * <p>
+ * 启动后通过 {@link ConfigWatcher} 监听配置文件变更， 实现 backends 列表的热更新。
  */
 public class ProxyBootstrap {
 
@@ -66,7 +67,8 @@ public class ProxyBootstrap {
         }
         try {
             frontendProtocol = FrontendProtocols.load(protocolId);
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             log.error("Failed to load frontend protocol '{}'", protocolId);
             throw e;
         }
@@ -184,7 +186,8 @@ public class ProxyBootstrap {
             startConfigWatcher();
 
             future.channel().closeFuture().sync();
-        } finally {
+        }
+        finally {
             shutdown();
         }
     }
@@ -232,9 +235,8 @@ public class ProxyBootstrap {
     }
 
     /**
-     * todo 只有一个实现，还需要抽象么？这个地方为什么要抽象出AuthConfig？
-     * AuthConfig 适配器 —— 从 ProxyConfig 获取认证信息，
-     * 实现 {@link com.translator.proxy.protocol.frontend.AuthConfig} 接口。
+     * todo 只有一个实现，还需要抽象么？这个地方为什么要抽象出AuthConfig？ AuthConfig 适配器 —— 从 ProxyConfig 获取认证信息， 实现
+     * {@link com.translator.proxy.protocol.frontend.AuthConfig} 接口。
      */
     private static class ProxyAuthConfig implements AuthConfig {
 
