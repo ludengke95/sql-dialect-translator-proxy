@@ -232,4 +232,41 @@ public class ConfigWatcherTest {
         assertEquals(3306, config.getPort());
         assertEquals(123456, config.getMaxAllowedPacket());
     }
+
+    @Test
+    public void testConfigLoaderTargetTranslationAutomaticBinding() throws Exception {
+        String yaml = "backends:\n"
+                + "  - name: dm-dgp-dsm\n"
+                + "    dialect: ORACLE\n"
+                + "    jdbc-url: jdbc:dm://10.110.60.149:5236?schema=dgp-dsm\n"
+                + "    username: SYSDBA\n"
+                + "    password: SYSDBA\n"
+                + "    max-pool-size: 10\n"
+                + "    min-idle: 2\n"
+                + "    translation:\n"
+                + "      keyword-case: UPPER\n"
+                + "      identifier-case: UPPER\n";
+        java.io.File tempFile = java.io.File.createTempFile("proxy-config-backend-test", ".yml");
+        tempFile.deleteOnExit();
+        try (java.io.FileWriter writer = new java.io.FileWriter(tempFile)) {
+            writer.write(yaml);
+        }
+
+        ProxyConfig config = ConfigLoader.loadFromFileOrNull(tempFile.getAbsolutePath());
+        assertNotNull(config);
+        assertEquals(1, config.getBackends().size());
+
+        ProxyConfig.TargetConfig target = config.getBackends().get(0);
+        assertEquals("dm-dgp-dsm", target.getName());
+        assertEquals("ORACLE", target.getDialect());
+        assertEquals("jdbc:dm://10.110.60.149:5236?schema=dgp-dsm", target.getJdbcUrl());
+        assertEquals("SYSDBA", target.getUsername());
+        assertEquals("SYSDBA", target.getPassword());
+        assertEquals(10, target.getMaxPoolSize());
+        assertEquals(2, target.getMinIdle());
+
+        assertNotNull("Target translation config should not be null", target.getTranslation());
+        assertEquals("UPPER", target.getTranslation().getKeywordCase());
+        assertEquals("UPPER", target.getTranslation().getIdentifierCase());
+    }
 }

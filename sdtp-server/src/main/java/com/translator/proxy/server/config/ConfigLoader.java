@@ -11,7 +11,14 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.error.YAMLException;
+import org.yaml.snakeyaml.introspector.Property;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
+import org.yaml.snakeyaml.representer.Representer;
 
 /**
  * YAML 配置文件加载器。
@@ -126,6 +133,8 @@ public final class ConfigLoader {
         Map<String, Object> root = yaml.load(stream);
 
         ProxyConfig config = new ProxyConfig();
+        Yaml targetYaml = createBeanYaml(ProxyConfig.TargetConfig.class);
+        Yaml translationYaml = createBeanYaml(ProxyConfig.TranslationConf.class);
 
         // === proxy 段 ===
         Map<String, Object> proxy = (Map<String, Object>) root.get("proxy");
@@ -155,7 +164,7 @@ public final class ConfigLoader {
         List<Map<String, Object>> backendsList = (List<Map<String, Object>>) root.get("backends");
         if (backendsList != null && !backendsList.isEmpty()) {
             for (Map<String, Object> bm : backendsList) {
-                ProxyConfig.TargetConfig tc = parseTargetConfig(bm);
+                ProxyConfig.TargetConfig tc = parseTargetConfig(bm, targetYaml);
                 config.getBackends().add(tc);
             }
             log.info("Loaded {} backends from config", config.getBackends().size());
@@ -165,7 +174,7 @@ public final class ConfigLoader {
         if (config.getBackends().isEmpty()) {
             Map<String, Object> target = (Map<String, Object>) root.get("target");
             if (target != null) {
-                ProxyConfig.TargetConfig tc = parseTargetConfig(target);
+                ProxyConfig.TargetConfig tc = parseTargetConfig(target, targetYaml);
                 if (tc.getName() == null) {
                     // 旧格式无 name，用 jdbc-url 中的数据库名或默认值
                     String url = tc.getJdbcUrl();
@@ -188,12 +197,10 @@ public final class ConfigLoader {
         // === translation 段 ===
         Map<String, Object> translation = (Map<String, Object>) root.get("translation");
         if (translation != null) {
-            ProxyConfig.TranslationConf trc = config.getTranslation();
-            if (translation.get("keyword-case") != null) {
-                trc.setKeywordCase((String) translation.get("keyword-case"));
-            }
-            if (translation.get("identifier-case") != null) {
-                trc.setIdentifierCase((String) translation.get("identifier-case"));
+            String dump = translationYaml.dump(translation);
+            ProxyConfig.TranslationConf trc = translationYaml.loadAs(dump, ProxyConfig.TranslationConf.class);
+            if (trc != null) {
+                config.setTranslation(trc);
             }
         }
 
@@ -226,22 +233,65 @@ public final class ConfigLoader {
         return config;
     }
 
-    private static ProxyConfig.TargetConfig parseTargetConfig(Map<String, Object> map) {
-        ProxyConfig.TargetConfig tc = new ProxyConfig.TargetConfig();
-        if (map.get("name") != null)
-            tc.setName((String) map.get("name"));
-        if (map.get("dialect") != null)
-            tc.setDialect((String) map.get("dialect"));
-        if (map.get("jdbc-url") != null)
-            tc.setJdbcUrl((String) map.get("jdbc-url"));
-        if (map.get("username") != null)
-            tc.setUsername((String) map.get("username"));
-        if (map.get("password") != null)
-            tc.setPassword((String) map.get("password"));
-        if (map.get("max-pool-size") != null)
-            tc.setMaxPoolSize(((Number) map.get("max-pool-size")).intValue());
-        if (map.get("min-idle") != null)
-            tc.setMinIdle(((Number) map.get("min-idle")).intValue());
-        return tc;
+    private static ProxyConfig.TargetConfig parseTargetConfig(Map<String, Object> map, Yaml targetYaml) {
+        if (map == null || map.isEmpty()) {
+            return new ProxyConfig.TargetConfig();
+        }
+        String yamlStr = targetYaml.dump(map);
+        ProxyConfig.TargetConfig tc = targetYaml.loadAs(yamlStr, ProxyConfig.TargetConfig.class);
+        return tc != null ? tc : new ProxyConfig.TargetConfig();
+    }
+
+    /**
+     * 自动将 YAML 中的 kebab-case (如 keyword-case) 转换为 Java Bean 的 camelCase (如 keywordCase)
+     */
+    public static class KebabCasePropertyUtils extends PropertyUtils {
+
+        public KebabCasePropertyUtils() {
+            setSkipMissingProperties(true);
+        }
+
+        @Override
+        public Property getProperty(Class<? extends Object> type, String name) {
+            String camelName = toCamelCase(name);
+            try {
+                return super.getProperty(type, camelName);
+            }
+            catch (YAMLException e) {
+                return super.getProperty(type, name);
+            }
+        }
+
+        private static String toCamelCase(String name) {
+            if (name == null || !name.contains("-")) {
+                return name;
+            }
+            StringBuilder sb = new StringBuilder();
+            boolean upper = false;
+            for (int i = 0; i < name.length(); i++) {
+                char c = name.charAt(i);
+                if (c == '-') {
+                    upper = true;
+                }
+                else {
+                    if (upper) {
+                        sb.append(Character.toUpperCase(c));
+                        upper = false;
+                    }
+                    else {
+                        sb.append(c);
+                    }
+                }
+            }
+            return sb.toString();
+        }
+    }
+
+    private static Yaml createBeanYaml(Class<?> rootClass) {
+        Representer representer = new Representer(new DumperOptions());
+        representer.setPropertyUtils(new KebabCasePropertyUtils());
+        Constructor constructor = new Constructor(rootClass, new LoaderOptions());
+        constructor.setPropertyUtils(new KebabCasePropertyUtils());
+        return new Yaml(constructor, representer);
     }
 }
