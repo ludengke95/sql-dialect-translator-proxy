@@ -1,6 +1,6 @@
 # SDT Proxy Docker Image — 多阶段构建
-# Stage 1: 编译阶段（使用 Maven 3.9 + JDK 8 官方镜像）
-FROM maven:3.9-eclipse-temurin-17 AS builder
+# Stage 1: 编译阶段（使用 Maven 3.9 + JDK 21 官方镜像）
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /workspace
 
@@ -13,8 +13,8 @@ RUN mvn clean package -DskipTests -B -q \
     && cp -r /workspace/sdtp-server/target/sdtp-server-*/sdtp-server-*/* /workspace/dist/
 
 # -------------------------------------------------------------------
-# Stage 2: 运行阶段（仅 JRE 8 镜像）
-FROM eclipse-temurin:8-jre
+# Stage 2: 运行阶段（仅 JRE 21 镜像）
+FROM eclipse-temurin:21-jre
 
 LABEL maintainer="sql-dialect-translator"
 LABEL description="SDT Proxy — MySQL protocol proxy, single target DB per instance"

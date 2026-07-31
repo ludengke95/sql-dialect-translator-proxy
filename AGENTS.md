@@ -4,7 +4,7 @@
 
 ## 项目
 
-- **技术栈**：Java 8、Maven 多模块、Apache Calcite（SQL 改写）、Netty 4.1（协议代理）、HikariCP（连接池）、SLF4J+Logback、JUnit 4 + Testcontainers、SnakeYAML。
+- **技术栈**：Java 21、Maven 多模块、Apache Calcite（SQL 改写）、Netty 4.1（协议代理）、HikariCP（连接池）、SLF4J+Logback、JUnit 4 + Testcontainers、SnakeYAML。
 - **入口点**：`com.translator.proxy.server.ProxyBootstrap` — Netty `main()`（`sdtp-server` 模块）
 - **Docker**：`docker` 目录 `Dockerfile`，`docker-compose.yml` 用于本地启动 Proxy + 数据库。
 

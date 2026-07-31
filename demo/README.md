@@ -1,6 +1,6 @@
 # SDT SQL 翻译示例服务 (Demos)
 
-本目录包含两个基于 Spring Boot 2.7 (Java 8) 编写的、可直接运行的 Web 服务实例。它们用于演示 **SQL Dialect Translator (SDT)** 的两种核心工作模式：**JDBC Wrapper 驱动模式** 与 **SDT Proxy 代理模式**。
+本目录包含两个基于 Spring Boot 2.7 (Java 21) 编写的、可直接运行的 Web 服务实例。它们用于演示 **SQL Dialect Translator (SDT)** 的两种核心工作模式：**JDBC Wrapper 驱动模式** 与 **SDT Proxy 代理模式**。
 
 这两个服务都配置了内置的、极具现代感的交互式 SQL Playground 网页端。您可以在网页上直接输入 MySQL 语法 SQL，点击执行并实时查看返回的 JSON 结果。
 

@@ -35,8 +35,9 @@
         </repository>
     </repositories>
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sdt.version>1.0.0-SNAPSHOT</sdt.version>
         <calcite.version>1.42.0</calcite.version>
@@ -122,8 +123,9 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.11.0</version>
                     <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
+                        <source>21</source>
+                        <target>21</target>
+                        <release>21</release>
                         <encoding>UTF-8</encoding>
                     </configuration>
                 </plugin>
@@ -219,10 +221,32 @@
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>3.21.0</version>
                 <configuration>
-                    <targetJdk>1.8</targetJdk>
+                    <targetJdk>21</targetJdk>
                     <printFailingErrors>true</printFailingErrors>
                     <failOnViolation>false</failOnViolation>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>git-hooks-init</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>git</executable>
+                            <arguments>
+                                <argument>config</argument>
+                                <argument>core.hooksPath</argument>
+                                <argument>.githooks</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

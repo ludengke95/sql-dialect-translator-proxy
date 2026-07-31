@@ -3,7 +3,7 @@
 > **作者**：架构师 高见远（Bob）  
 > **版本**：v1.0  
 > **日期**：2025-07-19  
-> **Java 版本约束**：Java 8（不支持 records、var）
+> **Java 版本约束**：Java 21（支持 records、var、Virtual Threads 等特性）
 
 ---
 
