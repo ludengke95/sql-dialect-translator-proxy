@@ -254,11 +254,14 @@ public class ProxyConfig {
     }
 
     /**
-     * SQL 翻译配置。
+     * SQL 翻译与校验配置。
      */
     public static class TranslationConf {
         private String keywordCase = "UPPER";
         private String identifierCase = "LOWER";
+        private boolean enableValidation = false;
+        private String validationMode = "STRICT";
+        private int maxTables = 100;
 
         public String getKeywordCase() {
             return keywordCase;
@@ -276,6 +279,30 @@ public class ProxyConfig {
             this.identifierCase = identifierCase;
         }
 
+        public boolean isEnableValidation() {
+            return enableValidation;
+        }
+
+        public void setEnableValidation(boolean enableValidation) {
+            this.enableValidation = enableValidation;
+        }
+
+        public String getValidationMode() {
+            return validationMode;
+        }
+
+        public void setValidationMode(String validationMode) {
+            this.validationMode = validationMode;
+        }
+
+        public int getMaxTables() {
+            return maxTables;
+        }
+
+        public void setMaxTables(int maxTables) {
+            this.maxTables = maxTables;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o)
@@ -283,12 +310,16 @@ public class ProxyConfig {
             if (!(o instanceof TranslationConf))
                 return false;
             TranslationConf that = (TranslationConf) o;
-            return Objects.equals(keywordCase, that.keywordCase) && Objects.equals(identifierCase, that.identifierCase);
+            return enableValidation == that.enableValidation
+                    && maxTables == that.maxTables
+                    && Objects.equals(keywordCase, that.keywordCase)
+                    && Objects.equals(identifierCase, that.identifierCase)
+                    && Objects.equals(validationMode, that.validationMode);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(keywordCase, identifierCase);
+            return Objects.hash(keywordCase, identifierCase, enableValidation, validationMode, maxTables);
         }
     }
 

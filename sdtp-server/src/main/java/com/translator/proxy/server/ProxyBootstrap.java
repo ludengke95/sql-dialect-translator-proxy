@@ -96,7 +96,10 @@ public class ProxyBootstrap {
         ProxyConfig.TranslationConf trc = config.getTranslation();
         TranslationConfig defaultTranslationConfig = new TranslationConfig()
                 .withKeywordCase(TranslationConfig.KeywordCase.valueOf(trc.getKeywordCase()))
-                .withIdentifierCase(TranslationConfig.IdentifierCase.valueOf(trc.getIdentifierCase()));
+                .withIdentifierCase(TranslationConfig.IdentifierCase.valueOf(trc.getIdentifierCase()))
+                .withEnableValidation(trc.isEnableValidation())
+                .withValidationMode(TranslationConfig.ValidationMode.valueOf(trc.getValidationMode().toUpperCase()))
+                .withMaxTables(trc.getMaxTables());
 
         // 将 ProxyConfig.TargetConfig 转换为 BackendEntry 列表
         List<BackendEntry> backends = new ArrayList<>();

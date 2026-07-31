@@ -318,6 +318,9 @@ public class ConfigWatcher implements Runnable {
         if (tc.getTranslation() != null) {
             be.setKeywordCase(tc.getTranslation().getKeywordCase());
             be.setIdentifierCase(tc.getTranslation().getIdentifierCase());
+            be.setEnableValidation(tc.getTranslation().isEnableValidation());
+            be.setValidationMode(tc.getTranslation().getValidationMode());
+            be.setMaxTables(tc.getTranslation().getMaxTables());
         }
         return be;
     }

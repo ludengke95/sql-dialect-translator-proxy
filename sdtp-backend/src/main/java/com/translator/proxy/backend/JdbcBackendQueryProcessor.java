@@ -6,8 +6,10 @@ import java.sql.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.translator.core.metadata.MetadataProvider;
 import com.translator.metrics.BackendMetrics;
 import com.translator.proxy.backend.mapper.ResultSetEncoder;
+import com.translator.proxy.backend.metadata.BackendMetadataProvider;
 import com.translator.proxy.core.handler.QueryProcessor;
 import com.translator.proxy.core.handler.SessionAttribute;
 import com.translator.proxy.core.handler.SqlTranslationContext;
@@ -35,9 +37,28 @@ public class JdbcBackendQueryProcessor implements QueryProcessor {
     private final HikariDataSource dataSource;
     /** 后端名称（用于指标打点） */
     private volatile String backendName = "unknown";
+    /** 元数据提供者 */
+    private volatile MetadataProvider metadataProvider;
 
     private JdbcBackendQueryProcessor(HikariDataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    /**
+     * 获取或创建元数据提供者。
+     */
+    public synchronized MetadataProvider getOrCreateMetadataProvider(int maxTables) {
+        if (metadataProvider == null && dataSource != null && !dataSource.isClosed()) {
+            metadataProvider = new BackendMetadataProvider(dataSource, maxTables);
+        }
+        return metadataProvider;
+    }
+
+    /**
+     * 获取底层的 HikariDataSource。
+     */
+    public HikariDataSource getDataSource() {
+        return dataSource;
     }
 
     /**

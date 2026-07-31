@@ -24,6 +24,13 @@ public class BackendEntry {
 
     private String identifierCase;
 
+    /** 校验配置（可选，不设置时使用全局默认值） */
+    private Boolean enableValidation;
+
+    private String validationMode;
+
+    private Integer maxTables;
+
     public BackendEntry() {
     }
 
@@ -134,6 +141,30 @@ public class BackendEntry {
         this.identifierCase = identifierCase;
     }
 
+    public Boolean getEnableValidation() {
+        return enableValidation;
+    }
+
+    public void setEnableValidation(Boolean enableValidation) {
+        this.enableValidation = enableValidation;
+    }
+
+    public String getValidationMode() {
+        return validationMode;
+    }
+
+    public void setValidationMode(String validationMode) {
+        this.validationMode = validationMode;
+    }
+
+    public Integer getMaxTables() {
+        return maxTables;
+    }
+
+    public void setMaxTables(Integer maxTables) {
+        this.maxTables = maxTables;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -149,12 +180,26 @@ public class BackendEntry {
                 && Objects.equals(username, that.username)
                 && Objects.equals(password, that.password)
                 && Objects.equals(keywordCase, that.keywordCase)
-                && Objects.equals(identifierCase, that.identifierCase);
+                && Objects.equals(identifierCase, that.identifierCase)
+                && Objects.equals(enableValidation, that.enableValidation)
+                && Objects.equals(validationMode, that.validationMode)
+                && Objects.equals(maxTables, that.maxTables);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
-                name, dialect, jdbcUrl, username, password, maxPoolSize, minIdle, keywordCase, identifierCase);
+                name,
+                dialect,
+                jdbcUrl,
+                username,
+                password,
+                maxPoolSize,
+                minIdle,
+                keywordCase,
+                identifierCase,
+                enableValidation,
+                validationMode,
+                maxTables);
     }
 }

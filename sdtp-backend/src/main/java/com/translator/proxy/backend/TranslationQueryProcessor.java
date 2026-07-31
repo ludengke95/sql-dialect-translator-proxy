@@ -8,9 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.translator.core.DialectType;
-import com.translator.core.SqlTranslationException;
 import com.translator.core.SqlTranslator;
 import com.translator.core.config.TranslationConfig;
+import com.translator.core.metadata.MetadataProvider;
 import com.translator.metrics.TranslationMetrics;
 import com.translator.proxy.core.handler.QueryProcessor;
 import com.translator.proxy.core.handler.SessionAttribute;
@@ -76,6 +76,9 @@ public class TranslationQueryProcessor implements QueryProcessor {
 
     /** 是否启用翻译 */
     private final boolean enabled;
+
+    /** 元数据提供者（用于校验） */
+    private MetadataProvider metadataProvider;
 
     /**
      * 创建翻译处理器。
@@ -289,6 +292,20 @@ public class TranslationQueryProcessor implements QueryProcessor {
     }
 
     /**
+     * 获取元数据提供者。
+     */
+    public MetadataProvider getMetadataProvider() {
+        return metadataProvider;
+    }
+
+    /**
+     * 设置元数据提供者。
+     */
+    public void setMetadataProvider(MetadataProvider metadataProvider) {
+        this.metadataProvider = metadataProvider;
+    }
+
+    /**
      * 翻译单条 SQL。
      */
     private String translate(String sql) {
@@ -297,6 +314,9 @@ public class TranslationQueryProcessor implements QueryProcessor {
             return sql;
         }
         SqlTranslator translator = new SqlTranslator(this.sourceDialect, targetDialect, translationConfig);
+        if (this.metadataProvider != null) {
+            translator.setMetadataProvider(this.metadataProvider);
+        }
         return translator.translate(sql);
     }
 

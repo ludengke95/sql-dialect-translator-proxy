@@ -272,15 +272,22 @@ public class BackendPoolManager implements BackendRouter {
 
         TranslationConfig tc = resolveTranslationConfig(be);
 
+        TranslationQueryProcessor tqp;
         // 如果后端 dialect 不是 MYSQL，按 MYSQL -> targetDialect 转换
         if (be.getDialect() != null && !be.getDialect().equalsIgnoreCase("MYSQL")) {
-            return new TranslationQueryProcessor(jdbcProcessor, be.getDialect(), tc, be.getName());
+            tqp = new TranslationQueryProcessor(jdbcProcessor, be.getDialect(), tc, be.getName());
         }
         else {
             // 前端是 POSTGRESQL 且后端是 MYSQL 时，开启 POSTGRESQL -> MYSQL 改写翻译
-            return new TranslationQueryProcessor(
+            tqp = new TranslationQueryProcessor(
                     jdbcProcessor, DialectType.POSTGRESQL, DialectType.MYSQL, tc, be.getName());
         }
+
+        if (tc.isEnableValidation()) {
+            tqp.setMetadataProvider(jdbcProcessor.getOrCreateMetadataProvider(tc.getMaxTables()));
+        }
+
+        return tqp;
     }
 
     /**
@@ -295,18 +302,28 @@ public class BackendPoolManager implements BackendRouter {
      * 解析后端翻译配置：优先后端自带，否则全局默认。
      */
     private TranslationConfig resolveTranslationConfig(BackendEntry be) {
-        if (be.getKeywordCase() != null || be.getIdentifierCase() != null) {
-            String kw = be.getKeywordCase() != null
-                    ? be.getKeywordCase()
-                    : defaultTranslationConfig.getKeywordCase().name();
-            String id = be.getIdentifierCase() != null
-                    ? be.getIdentifierCase()
-                    : defaultTranslationConfig.getIdentifierCase().name();
-            return new TranslationConfig()
-                    .withKeywordCase(TranslationConfig.KeywordCase.valueOf(kw))
-                    .withIdentifierCase(TranslationConfig.IdentifierCase.valueOf(id));
-        }
-        return defaultTranslationConfig;
+        boolean enableVal = be.getEnableValidation() != null
+                ? be.getEnableValidation()
+                : defaultTranslationConfig.isEnableValidation();
+        String valModeStr = be.getValidationMode() != null
+                ? be.getValidationMode()
+                : defaultTranslationConfig.getValidationMode().name();
+        int maxTbls = be.getMaxTables() != null
+                ? be.getMaxTables()
+                : defaultTranslationConfig.getMaxTables();
+        String kw = be.getKeywordCase() != null
+                ? be.getKeywordCase()
+                : defaultTranslationConfig.getKeywordCase().name();
+        String id = be.getIdentifierCase() != null
+                ? be.getIdentifierCase()
+                : defaultTranslationConfig.getIdentifierCase().name();
+
+        return new TranslationConfig()
+                .withKeywordCase(TranslationConfig.KeywordCase.valueOf(kw))
+                .withIdentifierCase(TranslationConfig.IdentifierCase.valueOf(id))
+                .withEnableValidation(enableVal)
+                .withValidationMode(TranslationConfig.ValidationMode.valueOf(valModeStr.toUpperCase()))
+                .withMaxTables(maxTbls);
     }
 
     /**
